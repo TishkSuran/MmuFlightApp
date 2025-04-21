@@ -1,6 +1,6 @@
 package service;
 
-import model.Flight;
+import flightModel.Flight;
 
 import java.sql.*;
 import java.time.LocalDate;
