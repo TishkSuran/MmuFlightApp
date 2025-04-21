@@ -143,6 +143,7 @@ public class Flight {
         if (dateStr != null && dateStr.length() == 8) {
             try {
                 this.date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("ddMMyyyy"));
+//                this.date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyyMMyyyy"));
             } catch (Exception e) {
                 System.err.println("Invalid date format: " + dateStr);
             }
@@ -151,6 +152,7 @@ public class Flight {
 
     public String getFormattedDate() {
         return date != null ? date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "N/A";
+//        return date != null ? date.format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) : "N/A";
     }
 
     public String getAirlineCode() {

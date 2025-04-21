@@ -44,7 +44,7 @@ public class CsvImporter {
 
     private void setupErrorLog() {
         try {
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("ddMMyyyy_HHmmss"));
             Path logDir = Paths.get("logs");
             if (!Files.exists(logDir)) {
                 Files.createDirectories(logDir);

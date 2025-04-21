@@ -146,12 +146,12 @@ public class FlightDataService {
 
         if (startDate != null) {
             sqlBuilder.append("AND f.date >= ? ");
-            params.add(startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+            params.add(startDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
         }
 
         if (endDate != null) {
             sqlBuilder.append("AND f.date <= ? ");
-            params.add(endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+            params.add(endDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
         }
 
         // Handle delay filters
