@@ -329,6 +329,9 @@ public class FlightDataService {
         System.out.println("==== getAverageDelayByAirline(" + year + ") called ====");
         Map<String, Double> results = new HashMap<>();
 
+        // For UK format, we need to look for year at the end of the date string (DDMMYYYY)
+        String yearPattern = "%" + year;
+
         // Calculate delays by looking at delay_reason table
         String sql =
                 "SELECT a.name AS airline_name, " +
@@ -336,16 +339,16 @@ public class FlightDataService {
                         "FROM Flight f " +
                         "JOIN Airline a ON f.airline_code = a.iata_code " +
                         "JOIN Delay_Reason dr ON f.flight_id = dr.flight_id " +
-                        "WHERE f.date LIKE ? " +
+                        "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
                         "GROUP BY a.name " +
                         "HAVING COUNT(*) > 1 " +
                         "ORDER BY avg_delay DESC";
 
         System.out.println("Using SQL query: " + sql);
-        System.out.println("Parameter: " + year + "%");
+        System.out.println("Parameter: " + year);
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, year + "%");
+            stmt.setString(1, String.valueOf(year));
             System.out.println("Executing query...");
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -375,7 +378,7 @@ public class FlightDataService {
                     "ELSE 0 END) AS avg_delay " +
                     "FROM Flight f " +
                     "JOIN Airline a ON f.airline_code = a.iata_code " +
-                    "WHERE f.date LIKE ? " +
+                    "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
                     "AND f.scheduled_arrival > 0 AND f.actual_arrival > 0 " +
                     "GROUP BY a.name " +
                     "HAVING COUNT(*) > 1 " +
@@ -384,7 +387,7 @@ public class FlightDataService {
             System.out.println("Using fallback SQL query: " + sql);
 
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, year + "%");
+                stmt.setString(1, String.valueOf(year));
                 System.out.println("Executing fallback query...");
 
                 try (ResultSet rs = stmt.executeQuery()) {
@@ -442,7 +445,7 @@ public class FlightDataService {
                         "FROM Flight f " +
                         "JOIN Airport o ON f.flight_origin = o.iata_code " +
                         "JOIN Delay_Reason dr ON f.flight_id = dr.flight_id " +
-                        "WHERE f.date LIKE ? " +
+                        "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
                         "GROUP BY o.name " +
                         "HAVING COUNT(*) > 1 " + // Reduce threshold to show more airports
                         "ORDER BY avg_delay DESC " +
@@ -451,7 +454,7 @@ public class FlightDataService {
         System.out.println("Airport analysis SQL: " + sql);
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, year + "%");
+            stmt.setString(1, String.valueOf(year));
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -474,7 +477,7 @@ public class FlightDataService {
                     "ELSE 0 END) AS avg_delay " +
                     "FROM Flight f " +
                     "JOIN Airport o ON f.flight_origin = o.iata_code " +
-                    "WHERE f.date LIKE ? " +
+                    "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
                     "AND f.scheduled_arrival > 0 AND f.actual_arrival > 0 " +
                     "GROUP BY o.name " +
                     "HAVING COUNT(*) > 1 " +
@@ -482,7 +485,7 @@ public class FlightDataService {
                     "LIMIT 20";
 
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, year + "%");
+                stmt.setString(1, String.valueOf(year));
 
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
@@ -526,15 +529,16 @@ public class FlightDataService {
         Map<String, Double> results = new HashMap<>();
 
         // Calculate delays by looking at delay_reason table
+        // Format is DDMMYYYY in the database
         String sql =
-                "SELECT substr(f.date, 1, 4) || '-' || substr(f.date, 5, 2) AS month_year, " +
+                "SELECT substr(f.date, 3, 2) || '/' || substr(f.date, 5, 4) AS month_year, " +
                         "AVG(dr.delay_length) AS avg_delay " +
                         "FROM Flight f " +
                         "JOIN Delay_Reason dr ON f.flight_id = dr.flight_id " +
                         "WHERE f.flight_origin = ? " +
-                        "AND substr(f.date, 1, 4) BETWEEN ? AND ? " +
+                        "AND substr(f.date, 5, 4) BETWEEN ? AND ? " +
                         "GROUP BY month_year " +
-                        "ORDER BY month_year";
+                        "ORDER BY substr(f.date, 5, 4), substr(f.date, 3, 2)"; // Order by year, then month
 
         System.out.println("Time series SQL: " + sql);
         System.out.println("Airport: " + airportCode + ", Years: " + startYear + "-" + endYear);
@@ -549,13 +553,9 @@ public class FlightDataService {
                     String monthYear = rs.getString("month_year");
                     double avgDelay = rs.getDouble("avg_delay");
 
-                    // Format month-year for display
-                    String[] parts = monthYear.split("-");
-                    if (parts.length == 2) {
-                        String formattedMonthYear = parts[1] + "/" + parts[0]; // MM/YYYY
-                        results.put(formattedMonthYear, avgDelay);
-                        System.out.println("Month-Year: " + formattedMonthYear + ", Avg Delay: " + avgDelay);
-                    }
+                    // monthYear is already formatted as MM/YYYY for UK display
+                    results.put(monthYear, avgDelay);
+                    System.out.println("Month-Year: " + monthYear + ", Avg Delay: " + avgDelay);
                 }
             }
         }
@@ -565,16 +565,16 @@ public class FlightDataService {
             // Fallback approach - Calculate approximate delays
             System.out.println("No delay_reason data found. Trying fallback approach...");
 
-            sql = "SELECT substr(f.date, 1, 4) || '-' || substr(f.date, 5, 2) AS month_year, " +
+            sql = "SELECT substr(f.date, 3, 2) || '/' || substr(f.date, 5, 4) AS month_year, " +
                     "AVG(CASE WHEN f.actual_arrival > f.scheduled_arrival " +
                     "THEN (f.actual_arrival - f.scheduled_arrival) " +
                     "ELSE 0 END) AS avg_delay " +
                     "FROM Flight f " +
                     "WHERE f.flight_origin = ? " +
-                    "AND substr(f.date, 1, 4) BETWEEN ? AND ? " +
+                    "AND substr(f.date, 5, 4) BETWEEN ? AND ? " +
                     "AND f.scheduled_arrival > 0 AND f.actual_arrival > 0 " +
                     "GROUP BY month_year " +
-                    "ORDER BY month_year";
+                    "ORDER BY substr(f.date, 5, 4), substr(f.date, 3, 2)";  // Order by year, then month
 
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, airportCode);
@@ -591,13 +591,9 @@ public class FlightDataService {
                             avgDelay = (Math.floor(avgDelay / 100) * 60) + (avgDelay % 100);
                         }
 
-                        // Format month-year for display
-                        String[] parts = monthYear.split("-");
-                        if (parts.length == 2) {
-                            String formattedMonthYear = parts[1] + "/" + parts[0]; // MM/YYYY
-                            results.put(formattedMonthYear, avgDelay);
-                            System.out.println("Fallback - Month-Year: " + formattedMonthYear + ", Avg Delay: " + avgDelay);
-                        }
+                        // monthYear is already formatted as MM/YYYY for UK display
+                        results.put(monthYear, avgDelay);
+                        System.out.println("Fallback - Month-Year: " + monthYear + ", Avg Delay: " + avgDelay);
                     }
                 }
             }

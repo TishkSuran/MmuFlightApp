@@ -168,7 +168,8 @@ public class CsvImporter {
                     String divertedStr = getColumnValue(data, columnMap, "DIVERTED");
 
                     // Standardise the date formats.
-                    flDate = flDate.replace("-", "");
+//                    flDate = flDate.replace("-", "");
+                    flDate = standardiseDate(flDate);
 
                     // Skip if date is missing or invalid, and log it.
                     if (isEmptyOrNull(flDate) || flDate.length() != 8) {
@@ -661,6 +662,31 @@ public class CsvImporter {
 
     public int getUniqueAirportsCount() {
         return uniqueAirports.size();
+    }
+
+    private String standardiseDate(String dateStr) {
+        if (dateStr != null && dateStr.contains("-") && dateStr.length() == 10) {
+            try {
+                // Parse as YYYY-MM-DD and convert to DDMMYYYY
+                String[] parts = dateStr.split("-");
+                if (parts.length == 3) {
+                    String year = parts[0];
+                    String month = parts[1];
+                    String day = parts[2];
+
+                    // Ensure numbers are properly formatted
+                    if (month.length() == 1) month = "0" + month;
+                    if (day.length() == 1) day = "0" + day;
+
+                    return day + month + year; // Returns DDMMYYYY
+                }
+            } catch (Exception e) {
+                logError("Error standardizing date format: " + dateStr + " - " + e.getMessage());
+            }
+        }
+
+        // If already in DDMMYYYY format or conversion failed, return as is
+        return dateStr.replace("-", "");
     }
 
 

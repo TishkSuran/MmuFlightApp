@@ -140,10 +140,16 @@ public class Flight {
     }
 
     public void setDateFromString(String dateStr) {
-        if (dateStr != null && dateStr.length() == 8) {
+        if (dateStr != null) {
             try {
-                this.date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("ddMMyyyy"));
-//                this.date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyyMMyyyy"));
+                // Check for American format (YYYY-MM-DD)
+                if (dateStr.contains("-") && dateStr.length() == 10) {
+                    this.date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                }
+                // UK date format as stored in the database (DDMMYYYY)
+                else if (dateStr.length() == 8) {
+                    this.date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("ddMMyyyy"));
+                }
             } catch (Exception e) {
                 System.err.println("Invalid date format: " + dateStr);
             }
@@ -152,7 +158,6 @@ public class Flight {
 
     public String getFormattedDate() {
         return date != null ? date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "N/A";
-//        return date != null ? date.format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) : "N/A";
     }
 
     public String getAirlineCode() {
@@ -292,8 +297,6 @@ public class Flight {
         return getFullFlightNumber() + " from " + originCode + " to " + destCode + " on " + getFormattedDate();
     }
 }
-
-
 
 
 
