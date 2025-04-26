@@ -15,7 +15,6 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.time.Month;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
-import org.jfree.data.xy.XYDataset;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -31,7 +30,7 @@ import java.util.TreeMap;
 /**
  * Enhanced panel for displaying analysis charts with UK-specific formatting.
  */
-public class SimplifiedAnalysisPanel extends JPanel {
+public class AnalysisPanel extends JPanel {
 
     // UI constants
     private final Color primaryColor = new Color(41, 128, 185);
@@ -52,7 +51,7 @@ public class SimplifiedAnalysisPanel extends JPanel {
     /**
      * Creates a new simplified analysis panel with UK formatting.
      */
-    public SimplifiedAnalysisPanel() {
+    public AnalysisPanel() {
         setLayout(new BorderLayout(10, 10));
         setBackground(backgroundColor);
         setBorder(new EmptyBorder(10, 10, 10, 10));

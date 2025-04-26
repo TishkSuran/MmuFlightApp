@@ -6,41 +6,29 @@ import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Table model for displaying flight data with UK formatting.
- * Provides column definitions and data mappings for the flight search results table.
- */
+
 public class FlightTableModel extends AbstractTableModel {
 
-    // Column definitions
+    // Column data definitions.
     private static final String[] COLUMN_NAMES = {
             "Flight", "Date", "Airline", "Origin", "Destination",
             "Scheduled Dep", "Actual Dep", "Scheduled Arr", "Actual Arr", "Status"
     };
 
-    // Column types for proper sorting
+    // Column types for proper sorting.
     private static final Class<?>[] COLUMN_TYPES = {
             String.class, String.class, String.class, String.class, String.class,
             String.class, String.class, String.class, String.class, String.class
     };
-
-    // Data storage
     private List<Flight> flights = new ArrayList<>();
 
-    /**
-     * Sets the list of flights to be displayed in the table.
-     * @param flights the list of flights
-     */
+
     public void setFlights(List<Flight> flights) {
         this.flights = new ArrayList<>(flights);
         fireTableDataChanged();
     }
 
-    /**
-     * Gets the flight at the specified row index.
-     * @param rowIndex the row index
-     * @return the flight at the specified row, or null if the index is out of bounds
-     */
+
     public Flight getFlightAt(int rowIndex) {
         if (rowIndex >= 0 && rowIndex < flights.size()) {
             return flights.get(rowIndex);
@@ -80,7 +68,7 @@ public class FlightTableModel extends AbstractTableModel {
             case 0: // Flight Number
                 return flight.getFullFlightNumber();
 
-            case 1: // Date in UK format (DD/MM/YYYY)
+            case 1: // Date in format (DD/MM/YYYY)
                 return flight.getFormattedDate();
 
             case 2: // Airline

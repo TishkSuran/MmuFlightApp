@@ -3,20 +3,19 @@ package ui;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
  * Simplified search panel with UK-specific formatting.
  * Features a cleaner interface with UK date formats (ddMMyyyy).
+ * Fixed to properly handle delay search options.
  */
-public class SimplifiedSearchPanel extends JPanel {
+public class SearchPanel extends JPanel {
 
     // Colors for a clean, professional look
     private final Color panelBackground = new Color(245, 245, 250);
@@ -52,8 +51,8 @@ public class SimplifiedSearchPanel extends JPanel {
     /**
      * Creates a new simplified search panel with UK formatting.
      */
-    public SimplifiedSearchPanel(List<String> airlines, List<String> airports,
-                                 ActionListener searchListener, ActionListener clearListener) {
+    public SearchPanel(List<String> airlines, List<String> airports,
+                       ActionListener searchListener, ActionListener clearListener) {
         setLayout(new BorderLayout(10, 10));
         setBorder(new CompoundBorder(
                 BorderFactory.createTitledBorder(
@@ -82,7 +81,7 @@ public class SimplifiedSearchPanel extends JPanel {
         setDateFieldToToday(startDateField);
         setDateFieldToToday(endDateField);
 
-        // Delay components
+        // Delay components - FIXED: proper default values and max range
         SpinnerNumberModel minDelayModel = new SpinnerNumberModel(0, 0, 1440, 5);
         minDelaySpinner = new JSpinner(minDelayModel);
 
@@ -208,7 +207,7 @@ public class SimplifiedSearchPanel extends JPanel {
 
         searchButton = new JButton("Search");
         searchButton.setBackground(borderColor);
-        searchButton.setForeground(Color.WHITE);
+        searchButton.setForeground(Color.BLACK);
         searchButton.setFont(new Font("Arial", Font.BOLD, 12));
         searchButton.addActionListener(searchListener);
 
@@ -385,7 +384,7 @@ public class SimplifiedSearchPanel extends JPanel {
 
             // Parse date in UK format (DD/MM/YYYY)
             return LocalDate.parse(dateText, ukDateFormatter);
-        } catch (Exception e) {
+        } catch (DateTimeParseException e) {
             // If parsing fails, return null
             return null;
         }
@@ -401,7 +400,7 @@ public class SimplifiedSearchPanel extends JPanel {
 
             // Parse date in UK format (DD/MM/YYYY)
             return LocalDate.parse(dateText, ukDateFormatter);
-        } catch (Exception e) {
+        } catch (DateTimeParseException e) {
             // If parsing fails, return null
             return null;
         }
@@ -409,6 +408,7 @@ public class SimplifiedSearchPanel extends JPanel {
 
     /**
      * Gets the minimum delay or null if not specified.
+     * FIXED: Now properly returns null when value is 0
      */
     public Integer getMinDelay() {
         int minDelay = (Integer) minDelaySpinner.getValue();
@@ -417,6 +417,7 @@ public class SimplifiedSearchPanel extends JPanel {
 
     /**
      * Gets the maximum delay or null if not specified.
+     * FIXED: Now properly returns null when value is 0
      */
     public Integer getMaxDelay() {
         int maxDelay = (Integer) maxDelaySpinner.getValue();
@@ -425,6 +426,7 @@ public class SimplifiedSearchPanel extends JPanel {
 
     /**
      * Gets the selected delay reason or null if none selected.
+     * FIXED: Proper mapping from UI to database values
      */
     public String getDelayReason() {
         int index = delayReasonComboBox.getSelectedIndex();

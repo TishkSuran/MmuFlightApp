@@ -8,11 +8,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Enhanced panel for displaying detailed flight information with UK formatting.
- * Features clear visual indicators for flight status and improved layout.
- */
-public class SimplifiedFlightDetailPanel extends JPanel {
+
+public class FlightDetailPanel extends JPanel {
 
     // UI constants
     private final Color headerColor = new Color(41, 128, 185);
@@ -56,7 +53,7 @@ public class SimplifiedFlightDetailPanel extends JPanel {
     /**
      * Creates a new flight detail panel with enhanced UK-style formatting.
      */
-    public SimplifiedFlightDetailPanel() {
+    public FlightDetailPanel() {
         setLayout(new BorderLayout(10, 10));
         setBackground(bgColor);
         setBorder(new EmptyBorder(10, 10, 10, 10));

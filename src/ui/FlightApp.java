@@ -11,165 +11,168 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Simplified Flight Punctuality Application for UK users.
- * Features a cleaner interface with UK date formats (ddMMyyyy).
+ * Flight Punctuality App - shows delay stats for airports.
  */
-public class SimplifiedFlightApp extends JFrame {
+public class FlightApp extends JFrame {
 
-    private final FlightDataService dataService;
-    private final ui.FlightTableModel tableModel;
-    private final JTable flightTable;
-    private final SimplifiedFlightDetailPanel detailPanel;
-    private final SimplifiedSearchPanel searchPanel;
-    private final SimplifiedAnalysisPanel analysisPanel;
-    private final JLabel statusLabel;
-    private final Color primaryColor = new Color(41, 128, 185); // A nice blue shade
-    private final Font headerFont = new Font("Arial", Font.BOLD, 14);
+    // Services & models/
+    private FlightDataService dataService;
+    private FlightTableModel tableModel;
+
+    // UI components.
+    private JTable flightTable;
+    private FlightDetailPanel detailPanel;
+    private SearchPanel searchPanel;
+    private AnalysisPanel analysisPanel;
+    private JLabel statusLabel;
+
+    // UI constants
+    private final Color PRIMARY_COLOR = new Color(41, 128, 185); // Blue
+    private final Font HEADER_FONT = new Font("Arial", Font.BOLD, 14);
+
+    // Quick access to shared borders
+    private Border standardBorder;
 
     /**
-     * Creates and initializes the simplified application frame.
-     * @throws SQLException if a database access error occurs
+     * Creates the main app frame
      */
-    public SimplifiedFlightApp() throws SQLException {
-        super("UK Flight Punctuality Tracker");
+    public FlightApp() throws SQLException {
+        super("Flight Punctuality Tracker");
 
-        // Set the application icon if available
         try {
-            // You would need to add this icon file to your resources
-            // setIconImage(new ImageIcon(getClass().getResource("/images/app_icon.png")).getImage());
+            // setIconImage(new ImageIcon(getClass().getResource("/images/icon_image.png")).getImage());
         } catch (Exception e) {
-            System.err.println("Icon not found: " + e.getMessage());
+            System.err.println("Icon missing: " + e.getMessage());
         }
 
-        // Set up data service
+        // Init DB connection.
         dataService = new FlightDataService();
 
-        // Set up main components with UK-specific customizations
+        // Set up UI components.
         tableModel = new FlightTableModel();
-        flightTable = createStyledTable(tableModel);
+        flightTable = makeTable(tableModel);
+        detailPanel = new FlightDetailPanel();
 
-        detailPanel = new SimplifiedFlightDetailPanel();
+        // Create standardBorder
+        standardBorder = BorderFactory.createCompoundBorder(
+                BorderFactory.createEtchedBorder(),
+                new EmptyBorder(5, 5, 5, 5)
+        );
 
-        // Initialize search panel with UK date format
-        searchPanel = new SimplifiedSearchPanel(
+        searchPanel = new SearchPanel(
                 dataService.getAirlines(),
                 dataService.getAirports(),
                 this::handleSearch,
                 this::handleClear
         );
 
-        analysisPanel = new SimplifiedAnalysisPanel();
+        analysisPanel = new AnalysisPanel();
         statusLabel = new JLabel("Ready");
         statusLabel.setBorder(new EmptyBorder(3, 10, 3, 10));
 
-        // Configure the UI with British styling
-        configureUI();
+        buildUI();
 
-        // Add a window listener to handle cleanup
+        // DB cleanup on exit.
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
                     dataService.disconnect();
-                    System.out.println("Database connection closed");
+                    System.out.println("DB connection closed");
                 } catch (SQLException ex) {
-                    System.err.println("Error disconnecting from database: " + ex.getMessage());
+                    // Just log and exit anyway.
+                    System.err.println("Error on disconnect: " + ex.getMessage());
                 }
             }
         });
 
-        // Set up the frame
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
         setMinimumSize(new Dimension(900, 600));
         setLocationRelativeTo(null);
     }
 
-    /**
-     * Creates a styled JTable with improved visuals.
-     */
-    private JTable createStyledTable(FlightTableModel model) {
+    private JTable makeTable(FlightTableModel model) {
         JTable table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setAutoCreateRowSorter(true);
-        table.setRowHeight(25); // Slightly larger rows for better readability
-        table.getTableHeader().setFont(headerFont);
-        table.getTableHeader().setBackground(primaryColor);
+        table.setRowHeight(25);
+
+        // Style header.
+        table.getTableHeader().setFont(HEADER_FONT);
+        table.getTableHeader().setBackground(PRIMARY_COLOR);
         table.getTableHeader().setForeground(Color.WHITE);
 
-        // Alternate row colors for better readability
+        // Stripe rows for readability.
         table.setDefaultRenderer(Object.class, new StripedRowRenderer());
 
         return table;
     }
 
     /**
-     * Configures the user interface components with improved layout.
+     * Builds the UI layout
      */
-    private void configureUI() {
-        // Set up flight table
+    private void buildUI() {
+        // Hook up flight selection -> detail panel.
         flightTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = flightTable.getSelectedRow();
                 if (selectedRow >= 0) {
                     int modelRow = flightTable.convertRowIndexToModel(selectedRow);
-                    Flight selectedFlight = tableModel.getFlightAt(modelRow);
-                    detailPanel.setFlight(selectedFlight);
+                    Flight f = tableModel.getFlightAt(modelRow);
+                    detailPanel.setFlight(f);
                 } else {
                     detailPanel.clearDetails();
                 }
             }
         });
 
-        // Create table sorter
+        // Set up sorter
         TableRowSorter<FlightTableModel> sorter = new TableRowSorter<>(tableModel);
         flightTable.setRowSorter(sorter);
 
-        // Create scroll pane for table with styled border
-        JScrollPane tableScrollPane = new JScrollPane(flightTable);
-        tableScrollPane.setBorder(createTitledBorder("Flight Results"));
+        // Create scrolling table with border.
+        JScrollPane tableScroller = new JScrollPane(flightTable);
+        tableScroller.setBorder(makeTitledBorder("Flight Results"));
 
-        // Create tabbed pane for right side panels
+        // Tabs for right side.
         JTabbedPane rightTabs = new JTabbedPane();
-        rightTabs.setFont(headerFont);
+        rightTabs.setFont(HEADER_FONT);
 
-        // Create details panel with styled border
+        // Add detail panel to tabs.
         JPanel detailsContainer = new JPanel(new BorderLayout());
         detailsContainer.add(detailPanel, BorderLayout.CENTER);
         rightTabs.addTab("Flight Details", detailsContainer);
 
-        // Create analysis tab
+        // Analysis tab.
         rightTabs.addTab("Analysis", analysisPanel);
 
-        // Create main split pane
+        // Main split pane dividing table and details.
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setDividerLocation(750);
-        splitPane.setResizeWeight(0.6); // Give more weight to the left side when resizing
+        splitPane.setResizeWeight(0.6);
 
-        // Left panel with search and table
+        // Left side: search + results table.
         JPanel leftPanel = new JPanel(new BorderLayout(0, 10));
         leftPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         leftPanel.add(searchPanel, BorderLayout.NORTH);
-        leftPanel.add(tableScrollPane, BorderLayout.CENTER);
+        leftPanel.add(tableScroller, BorderLayout.CENTER);
 
-        // Add components to split pane
+        // Add both sides to splitter.
         splitPane.setLeftComponent(leftPanel);
         splitPane.setRightComponent(rightTabs);
 
-        // Create toolbar with quick actions
-        JToolBar toolBar = createToolBar();
+        // Create toolbar with buttons.
+        JToolBar toolBar = makeToolBar();
 
-        // Create status bar
+        // Status bar at bottom.
         JPanel statusBar = new JPanel(new BorderLayout());
         statusBar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY),
@@ -177,91 +180,90 @@ public class SimplifiedFlightApp extends JFrame {
         ));
         statusBar.add(statusLabel, BorderLayout.WEST);
 
-        // Add help button to status bar
-        JButton helpButton = new JButton("Help");
-        helpButton.addActionListener(e -> showHelp());
-        statusBar.add(helpButton, BorderLayout.EAST);
+        // Help button.
+        JButton helpBtn = new JButton("Help");
+        helpBtn.addActionListener(e -> showHelp());
+        statusBar.add(helpBtn, BorderLayout.EAST);
 
-        // Add components to frame
+        // Add everything to frame.
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(toolBar, BorderLayout.NORTH);
         getContentPane().add(splitPane, BorderLayout.CENTER);
         getContentPane().add(statusBar, BorderLayout.SOUTH);
 
-        // Create menu bar
-        setJMenuBar(createMenuBar());
+        setJMenuBar(makeMenuBar());
     }
 
     /**
-     * Creates a toolbar with quick access buttons.
+     * Creates toolbar with quick buttons
      */
-    private JToolBar createToolBar() {
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setBorder(BorderFactory.createCompoundBorder(
+    private JToolBar makeToolBar() {
+        JToolBar bar = new JToolBar();
+        bar.setFloatable(false);
+        bar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
                 new EmptyBorder(3, 10, 3, 10)
         ));
 
-        JButton searchButton = new JButton("Search");
-        searchButton.setFont(headerFont);
-        searchButton.addActionListener(this::handleSearch);
+        // Search button
+        JButton searchBtn = new JButton("Search");
+        searchBtn.setFont(HEADER_FONT);
+        searchBtn.addActionListener(this::handleSearch);
 
-        JButton clearButton = new JButton("Clear");
-        clearButton.setFont(headerFont);
-        clearButton.addActionListener(this::handleClear);
+        // Clear button
+        JButton clearBtn = new JButton("Clear");
+        clearBtn.setFont(HEADER_FONT);
+        clearBtn.addActionListener(this::handleClear);
 
-        JButton airlineAnalysisButton = new JButton("Airline Analysis");
-        airlineAnalysisButton.setFont(headerFont);
-        airlineAnalysisButton.addActionListener(this::handleAirlineAnalysis);
+        // Analysis buttons
+        JButton airlineBtn = new JButton("Airline Analysis");
+        airlineBtn.setFont(HEADER_FONT);
+        airlineBtn.addActionListener(this::handleAirlineAnalysis);
 
-        JButton airportAnalysisButton = new JButton("Airport Analysis");
-        airportAnalysisButton.setFont(headerFont);
-        airportAnalysisButton.addActionListener(this::handleAirportAnalysis);
+        JButton airportBtn = new JButton("Airport Analysis");
+        airportBtn.setFont(HEADER_FONT);
+        airportBtn.addActionListener(this::handleAirportAnalysis);
 
-        JButton exportButton = new JButton("Export Results");
-        exportButton.setFont(headerFont);
-        exportButton.addActionListener(this::handleExport);
+        // Export - FIXME: Still needs file format selection
+        JButton exportBtn = new JButton("Export Results");
+        exportBtn.setFont(HEADER_FONT);
+        exportBtn.addActionListener(this::handleExport);
 
-        toolBar.add(searchButton);
-        toolBar.add(clearButton);
-        toolBar.addSeparator(new Dimension(20, 0));
-        toolBar.add(airlineAnalysisButton);
-        toolBar.add(airportAnalysisButton);
-        toolBar.addSeparator(new Dimension(20, 0));
-        toolBar.add(exportButton);
+        // Add buttons to toolbar
+        bar.add(searchBtn);
+        bar.add(clearBtn);
+        bar.addSeparator(new Dimension(20, 0));
+        bar.add(airlineBtn);
+        bar.add(airportBtn);
+        bar.addSeparator(new Dimension(20, 0));
+        bar.add(exportBtn);
 
-        return toolBar;
+        return bar;
     }
 
     /**
-     * Creates the application menu bar with enhanced organization.
+     * Creates app menu
      */
-    private JMenuBar createMenuBar() {
+    private JMenuBar makeMenuBar() {
         JMenuBar menuBar = new JMenuBar();
 
         // File menu
         JMenu fileMenu = new JMenu("File");
         fileMenu.add(new JMenuItem("Export Results")).addActionListener(this::handleExport);
         fileMenu.add(new JMenuItem("Print")).addActionListener(e ->
-                JOptionPane.showMessageDialog(this, "Print functionality not implemented yet.")
+                JOptionPane.showMessageDialog(this, "Print not implemented yet.")
         );
         fileMenu.addSeparator();
         fileMenu.add(new JMenuItem("Exit")).addActionListener(e -> System.exit(0));
 
         // Analysis menu
         JMenu analysisMenu = new JMenu("Analysis");
-        JMenuItem airlineAnalysisItem = new JMenuItem("Airline Delays by Year");
-        airlineAnalysisItem.addActionListener(this::handleAirlineAnalysis);
-        analysisMenu.add(airlineAnalysisItem);
-
-        JMenuItem airportAnalysisItem = new JMenuItem("Airport Delays by Year");
-        airportAnalysisItem.addActionListener(this::handleAirportAnalysis);
-        analysisMenu.add(airportAnalysisItem);
-
-        JMenuItem timeSeriesItem = new JMenuItem("Airport Delays Over Time");
-        timeSeriesItem.addActionListener(this::handleTimeSeriesAnalysis);
-        analysisMenu.add(timeSeriesItem);
+        analysisMenu.add(new JMenuItem("Airline Delays by Year"))
+                .addActionListener(this::handleAirlineAnalysis);
+        analysisMenu.add(new JMenuItem("Airport Delays by Year"))
+                .addActionListener(this::handleAirportAnalysis);
+        analysisMenu.add(new JMenuItem("Airport Delays Over Time"))
+                .addActionListener(this::handleTimeSeriesAnalysis);
 
         // Help menu
         JMenu helpMenu = new JMenu("Help");
@@ -276,15 +278,15 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Creates a styled titled border for panels.
+     * Makes a titled border with our standard style
      */
-    private Border createTitledBorder(String title) {
+    private Border makeTitledBorder(String title) {
         TitledBorder titledBorder = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(primaryColor, 1),
+                BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
                 title
         );
-        titledBorder.setTitleFont(headerFont);
-        titledBorder.setTitleColor(primaryColor);
+        titledBorder.setTitleFont(HEADER_FONT);
+        titledBorder.setTitleColor(PRIMARY_COLOR);
 
         return new CompoundBorder(
                 titledBorder,
@@ -293,58 +295,58 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Handles search button click event with improved feedback.
+     * Handles search actions
      */
     private void handleSearch(ActionEvent e) {
         try {
             statusLabel.setText("Searching...");
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-            // Get search criteria
+            // Grab search params
             String airline = searchPanel.getAirline();
-            String flightNumber = searchPanel.getFlightNumber();
+            String flightNum = searchPanel.getFlightNumber();
             String origin = searchPanel.getOrigin();
-            String destination = searchPanel.getDestination();
+            String dest = searchPanel.getDestination();
             LocalDate startDate = searchPanel.getStartDate();
             LocalDate endDate = searchPanel.getEndDate();
             Integer minDelay = searchPanel.getMinDelay();
             Integer maxDelay = searchPanel.getMaxDelay();
             String delayReason = searchPanel.getDelayReason();
 
-            // Build search description for status
+            // Show what we're searching for
             StringBuilder searchDesc = new StringBuilder("Searching for flights");
             if (airline != null && !airline.isEmpty())
-                searchDesc.append(" with airline ").append(airline);
+                searchDesc.append(" with ").append(airline);
             if (origin != null && !origin.isEmpty())
                 searchDesc.append(" from ").append(origin);
-            if (destination != null && !destination.isEmpty())
-                searchDesc.append(" to ").append(destination);
+            if (dest != null && !dest.isEmpty())
+                searchDesc.append(" to ").append(dest);
 
             statusLabel.setText(searchDesc.toString());
 
-            // Perform search
+            // Run the search
             List<Flight> results = dataService.searchFlights(
-                    airline, flightNumber, origin, destination,
+                    airline, flightNum, origin, dest,
                     startDate, endDate, minDelay, maxDelay, delayReason
             );
 
-            // Update table
+            // Update UI
             tableModel.setFlights(results);
-
-            // Clear selection
             flightTable.clearSelection();
 
-            // Update status with detailed results
-            String resultText = "Found " + results.size() + " matching flights";
+            // Show result stats
+            int delayed = countDelays(results);
+            int cancelled = countCancellations(results);
+
+            String resultText = "Found " + results.size() + " flights";
             if (results.size() > 0) {
-                resultText += " (" + countDelayedFlights(results) + " delayed, " +
-                        countCancelledFlights(results) + " cancelled)";
+                resultText += " (" + delayed + " delayed, " + cancelled + " cancelled)";
             }
             statusLabel.setText(resultText);
 
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this,
-                    "Database error: " + ex.getMessage(),
+                    "DB error: " + ex.getMessage(),
                     "Search Error", JOptionPane.ERROR_MESSAGE);
             statusLabel.setText("Search failed");
         } finally {
@@ -353,12 +355,12 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Counts flights with delays in search results.
+     * Count delayed flights
      */
-    private int countDelayedFlights(List<Flight> flights) {
+    private int countDelays(List<Flight> flights) {
         int count = 0;
-        for (Flight flight : flights) {
-            if (!flight.isCancelled() && !flight.isDiverted() && flight.getDelayMinutes() > 0) {
+        for (Flight f : flights) {
+            if (!f.isCancelled() && !f.isDiverted() && f.getDelayMinutes() > 0) {
                 count++;
             }
         }
@@ -366,12 +368,12 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Counts cancelled flights in search results.
+     * Count cancellations
      */
-    private int countCancelledFlights(List<Flight> flights) {
+    private int countCancellations(List<Flight> flights) {
         int count = 0;
-        for (Flight flight : flights) {
-            if (flight.isCancelled()) {
+        for (Flight f : flights) {
+            if (f.isCancelled()) {
                 count++;
             }
         }
@@ -379,20 +381,22 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Handles clear button click with improved feedback.
+     * Clear search form and results
      */
     private void handleClear(ActionEvent e) {
         searchPanel.clearFields();
         tableModel.setFlights(new java.util.ArrayList<>());
         detailPanel.clearDetails();
-        statusLabel.setText("Search criteria cleared");
+        statusLabel.setText("Search cleared");
     }
 
     /**
-     * Handles airline analysis with UK date presentation.
+     * Show airline delay chart
      */
     private void handleAirlineAnalysis(ActionEvent e) {
+        // Years we have data for
         Object[] years = {"2019", "2020", "2021", "2022", "2023"};
+
         Object selectedYear = JOptionPane.showInputDialog(
                 this,
                 "Select year for analysis:",
@@ -400,14 +404,14 @@ public class SimplifiedFlightApp extends JFrame {
                 JOptionPane.QUESTION_MESSAGE,
                 null,
                 years,
-                "2023"
+                "2023" // default to latest year
         );
 
         if (selectedYear != null) {
             try {
                 int year = Integer.parseInt(selectedYear.toString());
 
-                statusLabel.setText("Analyzing airline delays for " + year + "...");
+                statusLabel.setText("Getting airline delays for " + year + "...");
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
                 // Get data
@@ -416,15 +420,15 @@ public class SimplifiedFlightApp extends JFrame {
                 // Show chart
                 analysisPanel.showAirlineDelayChart(data, year);
 
-                // Switch to analysis tab automatically
+                // Switch to chart tab
                 ((JTabbedPane)analysisPanel.getParent()).setSelectedComponent(analysisPanel);
 
-                statusLabel.setText("Airline delay analysis completed for " + year);
+                statusLabel.setText("Airline analysis done for " + year);
 
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Database error: " + ex.getMessage(),
+                        "DB error: " + ex.getMessage(),
                         "Analysis Error",
                         JOptionPane.ERROR_MESSAGE
                 );
@@ -436,10 +440,11 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Handles airport analysis with UK date presentation.
+     * Show airport delay chart
      */
     private void handleAirportAnalysis(ActionEvent e) {
         Object[] years = {"2019", "2020", "2021", "2022", "2023"};
+
         Object selectedYear = JOptionPane.showInputDialog(
                 this,
                 "Select year for analysis:",
@@ -454,24 +459,22 @@ public class SimplifiedFlightApp extends JFrame {
             try {
                 int year = Integer.parseInt(selectedYear.toString());
 
-                statusLabel.setText("Analyzing airport delays for " + year + "...");
+                statusLabel.setText("Getting airport delays for " + year + "...");
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-                // Get data
+                // Get data and show chart
                 Map<String, Double> data = dataService.getAverageDelayByAirport(year);
-
-                // Show chart
                 analysisPanel.showAirportDelayChart(data, year);
 
-                // Switch to analysis tab automatically
+                // Switch to chart tab
                 ((JTabbedPane)analysisPanel.getParent()).setSelectedComponent(analysisPanel);
 
-                statusLabel.setText("Airport delay analysis completed for " + year);
+                statusLabel.setText("Airport analysis done for " + year);
 
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Database error: " + ex.getMessage(),
+                        "DB error: " + ex.getMessage(),
                         "Analysis Error",
                         JOptionPane.ERROR_MESSAGE
                 );
@@ -483,7 +486,7 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Handles time series analysis with UK date presentation.
+     * Show time series chart for a specific airport
      */
     private void handleTimeSeriesAnalysis(ActionEvent e) {
         try {
@@ -493,35 +496,33 @@ public class SimplifiedFlightApp extends JFrame {
             String selectedAirport = (String) JOptionPane.showInputDialog(
                     this,
                     "Select airport:",
-                    "Airport Delay Time Series",
+                    "Airport Delays Over Time",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
                     airportOptions,
                     airportOptions[0]);
 
             if (selectedAirport != null && !selectedAirport.trim().isEmpty()) {
-                // Extract airport code
+                // Parse code from "LHR - London Heathrow" format
                 String airportCode = selectedAirport.substring(0, selectedAirport.indexOf(" - "));
                 String airportName = selectedAirport.substring(selectedAirport.indexOf(" - ") + 3);
 
-                statusLabel.setText("Analyzing delays for " + airportName + " over time...");
+                statusLabel.setText("Analysing delays for " + airportName + "...");
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
                 // Get data
                 Map<String, Double> data = dataService.getDelaysByMonth(airportCode, 2019, 2023);
 
-                // Show chart
+                // Show chart and switch tabs
                 analysisPanel.showTimeSeriesChart(data, airportName);
-
-                // Switch to analysis tab automatically
                 ((JTabbedPane)analysisPanel.getParent()).setSelectedComponent(analysisPanel);
 
-                statusLabel.setText("Time series analysis completed for " + airportName);
+                statusLabel.setText("Analysis complete for " + airportName);
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Database error: " + ex.getMessage(),
+                    "DB error: " + ex.getMessage(),
                     "Analysis Error",
                     JOptionPane.ERROR_MESSAGE
             );
@@ -532,99 +533,89 @@ public class SimplifiedFlightApp extends JFrame {
     }
 
     /**
-     * Handles export functionality.
+     * Export results to file
+     * TODO: Add CSV/Excel options
      */
     private void handleExport(ActionEvent e) {
         if (tableModel.getRowCount() == 0) {
             JOptionPane.showMessageDialog(this,
-                    "No data to export. Please perform a search first.",
+                    "No data to export. Do a search first.",
                     "Export", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Export Flight Data");
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Export Flight Data");
+        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
-        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            // This would actually save the file in a real implementation
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            // This would actually save in a real implementation
             JOptionPane.showMessageDialog(this,
-                    "Data would be exported to: " + fileChooser.getSelectedFile().getPath(),
+                    "Data would be saved to: " + fc.getSelectedFile().getPath(),
                     "Export", JOptionPane.INFORMATION_MESSAGE);
 
-            statusLabel.setText("Data exported to " + fileChooser.getSelectedFile().getName());
+            statusLabel.setText("Exported to " + fc.getSelectedFile().getName());
         }
     }
 
     /**
-     * Shows help information.
+     * Show help popup
      */
     private void showHelp() {
         JOptionPane.showMessageDialog(this,
-                "UK Flight Punctuality Tracker Help\n\n" +
-                        "Search: Enter airline, flight number, origin or destination to find flights\n" +
-                        "Analysis: Use the Analysis menu to view delay statistics\n" +
-                        "Dates: All dates should be entered in UK format (DD/MM/YYYY)\n\n" +
-                        "For more help, please refer to the user manual.",
+                "Flight Punctuality Tracker Help\n\n" +
+                        "Search: Enter airline, flight#, origin or destination\n" +
+                        "Analysis: Check delay stats via Analysis menu",
                 "Help", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
-     * Shows about information.
+     * Show about popup
      */
     private void showAbout() {
         JOptionPane.showMessageDialog(this,
-                "UK Flight Punctuality Tracker\n" +
-                        "Version 1.0\n\n" +
-                        "A tool for analyzing flight delays and cancellations.\n" +
-                        "All dates are in UK format (DD/MM/YYYY).",
+                "Flight Punctuality Tracker\n" +
+                        "A tool for analysing flight delays and cancellations.",
                 "About", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /**
-     * Custom renderer for alternating row colors.
-     */
     private class StripedRowRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
 
-            Component comp = super.getTableCellRendererComponent(
+            Component c = super.getTableCellRendererComponent(
                     table, value, isSelected, hasFocus, row, column);
 
             if (!isSelected) {
-                if (row % 2 == 0) {
-                    comp.setBackground(Color.WHITE);
-                } else {
-                    comp.setBackground(new Color(240, 240, 250)); // Light blue-gray
-                }
+                c.setBackground(row % 2 == 0 ?
+                        Color.WHITE : new Color(240, 240, 250)); // Light blue-gray
             }
 
-            return comp;
+            return c;
         }
     }
 
     /**
-     * Main method to run the application.
+     * Main app entry point
      */
     public static void main(String[] args) {
-        // Set look and feel to system default
         try {
+            // Try system look and feel
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
-            System.err.println("Error setting look and feel: " + e.getMessage());
+            System.err.println("Look and feel error: " + e.getMessage());
         }
 
-        // Launch application on the event dispatch thread
+        // Launch app
         SwingUtilities.invokeLater(() -> {
             try {
-                SimplifiedFlightApp app = new SimplifiedFlightApp();
-                app.setVisible(true);
+                new FlightApp().setVisible(true);
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(
                         null,
                         "Database error: " + e.getMessage() + "\n\n" +
-                                "Make sure the flights.db database exists and is accessible.",
+                                "Make sure flights.db exists and is accessible.",
                         "Database Error",
                         JOptionPane.ERROR_MESSAGE
                 );
