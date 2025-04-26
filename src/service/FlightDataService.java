@@ -5,60 +5,31 @@ import flightModel.Flight;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- * Service class for querying flight data from the database.
+ * Service for flight data queries.
  */
 public class FlightDataService {
 
     private static final String DB_URL = "jdbc:sqlite:flights.db";
-    private Connection connection;
+    private Connection conn;
 
-    /**
-     * Creates a new flight data service and establishes a database connection.
-     * @throws SQLException if a database access error occurs
-     */
+    // Constructor - connecting to the DB.
     public FlightDataService() throws SQLException {
-        connect();
+        conn = DriverManager.getConnection(DB_URL);
+        System.out.println("DB connected: " + DB_URL);
     }
 
-    /**
-     * Establishes a connection to the database.
-     * @throws SQLException if a database access error occurs
-     */
-    private void connect() throws SQLException {
-        connection = DriverManager.getConnection(DB_URL);
-        // Debug message to verify connection
-        System.out.println("Connected to database: " + DB_URL);
-    }
-
-    /**
-     * Closes the database connection.
-     * @throws SQLException if a database access error occurs
-     */
+    // Close DB connection, goodbye!
     public void disconnect() throws SQLException {
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
+        if (conn != null && !conn.isClosed()) {
+            conn.close();
         }
     }
 
     /**
-     * Searches for flights based on the provided criteria.
-     * @param airline airline code or name (partial match)
-     * @param flightNumber flight number
-     * @param origin origin airport code
-     * @param destination destination airport code
-     * @param startDate start of date range
-     * @param endDate end of date range
-     * @param minDelay minimum delay in minutes
-     * @param maxDelay maximum delay in minutes
-     * @param delayReason specific delay reason
-     * @return list of matching flights
-     * @throws SQLException if a database access error occurs
+     * Search flights by criteria.
      */
     public List<Flight> searchFlights(String airline, String flightNumber,
                                       String origin, String destination,
@@ -66,12 +37,12 @@ public class FlightDataService {
                                       Integer minDelay, Integer maxDelay,
                                       String delayReason) throws SQLException {
 
-        StringBuilder sqlBuilder = new StringBuilder();
+        StringBuilder sql = new StringBuilder();
         List<Object> params = new ArrayList<>();
 
-        // Base query
-        sqlBuilder.append(
-                "SELECT f.flight_id, f.date, a.iata_code AS airline_code, a.name AS airline_name, " +
+        sql.append(
+                "SELECT f.flight_id, f.date, f.cancelled, f.diverted, f.cancellation_code, " +
+                        "a.iata_code AS airline_code, a.name AS airline_name, " +
                         "f.flight_number, o.iata_code AS origin_code, o.name AS origin_city, " +
                         "d.iata_code AS dest_code, d.name AS dest_city, " +
                         "f.scheduled_departure, f.actual_departure, f.scheduled_arrival, f.actual_arrival " +
@@ -82,158 +53,161 @@ public class FlightDataService {
                         "WHERE 1=1 "
         );
 
-        // Add filters based on provided criteria
+        // Add filters.
         if (airline != null && !airline.trim().isEmpty()) {
-            sqlBuilder.append("AND (a.iata_code LIKE ? OR a.name LIKE ?) ");
+            sql.append("AND (a.iata_code LIKE ? OR a.name LIKE ?) ");
             String pattern = "%" + airline.trim() + "%";
             params.add(pattern);
             params.add(pattern);
         }
 
+        // Flight number - could be "AA123" or just "123".
         if (flightNumber != null && !flightNumber.trim().isEmpty()) {
-            // Handle flight numbers with airline code prefix (e.g., "AA123")
-            if (flightNumber.length() >= 3 && Character.isLetter(flightNumber.charAt(0))) {
-                // Extract airline code and numeric part
-                String airlineCode = "";
-                String numericPart = "";
-                int i = 0;
-                while (i < flightNumber.length() && Character.isLetter(flightNumber.charAt(i))) {
-                    airlineCode += flightNumber.charAt(i);
-                    i++;
-                }
-                numericPart = flightNumber.substring(i);
+            String fn = flightNumber.trim();
 
-                if (!numericPart.isEmpty()) {
-                    try {
-                        int flightNum = Integer.parseInt(numericPart);
-                        sqlBuilder.append("AND a.iata_code = ? AND f.flight_number = ? ");
+            // Try to parse the number part
+            try {
+                // Check if starts with letters (airline code)
+                if (Character.isLetter(fn.charAt(0))) {
+                    // Split into airline code and number
+                    int i = 0;
+                    while (i < fn.length() && Character.isLetter(fn.charAt(i))) i++;
+
+                    String airlineCode = fn.substring(0, i);
+                    String numPart = fn.substring(i);
+
+                    if (!numPart.isEmpty()) {
+                        sql.append("AND a.iata_code = ? AND f.flight_number = ? ");
                         params.add(airlineCode);
-                        params.add(flightNum);
-                    } catch (NumberFormatException e) {
-                        // If parsing fails, try to match the whole thing as a flight number
-                        sqlBuilder.append("AND f.flight_number = ? ");
-                        try {
-                            params.add(Integer.parseInt(flightNumber.trim()));
-                        } catch (NumberFormatException ex) {
-                            // If that fails too, just add an impossible condition
-                            sqlBuilder.append("AND 1=0 ");
-                        }
+                        params.add(Integer.parseInt(numPart));
                     }
+                } else {
+                    // Just a flight number
+                    sql.append("AND f.flight_number = ? ");
+                    params.add(Integer.parseInt(fn));
                 }
-            } else {
-                // Try to parse as a numeric flight number
-                try {
-                    sqlBuilder.append("AND f.flight_number = ? ");
-                    params.add(Integer.parseInt(flightNumber.trim()));
-                } catch (NumberFormatException e) {
-                    // If parsing fails, add an impossible condition
-                    sqlBuilder.append("AND 1=0 ");
-                }
+            } catch (Exception e) {
+                // If parsing fails, add impossible condition
+                sql.append("AND 1=0 ");
             }
         }
 
+        // Origin
         if (origin != null && !origin.trim().isEmpty()) {
-            sqlBuilder.append("AND (o.iata_code = ? OR o.name LIKE ?) ");
+            sql.append("AND (o.iata_code = ? OR o.name LIKE ?) ");
             params.add(origin.trim().toUpperCase());
             params.add("%" + origin.trim() + "%");
         }
 
+        // Destination
         if (destination != null && !destination.trim().isEmpty()) {
-            sqlBuilder.append("AND (d.iata_code = ? OR d.name LIKE ?) ");
+            sql.append("AND (d.iata_code = ? OR d.name LIKE ?) ");
             params.add(destination.trim().toUpperCase());
             params.add("%" + destination.trim() + "%");
         }
 
+        // Date range
         if (startDate != null) {
-            sqlBuilder.append("AND f.date >= ? ");
+            sql.append("AND f.date >= ? ");
             params.add(startDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
         }
 
         if (endDate != null) {
-            sqlBuilder.append("AND f.date <= ? ");
+            sql.append("AND f.date <= ? ");
             params.add(endDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
         }
 
-        // Handle delay filters
-        if (minDelay != null || maxDelay != null || delayReason != null) {
-            sqlBuilder.append("AND EXISTS (SELECT 1 FROM Delay_Reason dr WHERE dr.flight_id = f.flight_id ");
+        // Delay filters - only join if needed
+        boolean hasDelayFilter = (minDelay != null || maxDelay != null ||
+                (delayReason != null && !delayReason.trim().isEmpty()));
+
+        if (hasDelayFilter) {
+            sql.append("AND f.flight_id IN (SELECT DISTINCT flight_id FROM Delay_Reason WHERE 1=1 ");
 
             if (delayReason != null && !delayReason.trim().isEmpty()) {
-                sqlBuilder.append("AND dr.reason = ? ");
+                sql.append("AND reason = ? ");
                 params.add(delayReason.trim().toUpperCase());
             }
 
             if (minDelay != null) {
-                sqlBuilder.append("AND dr.delay_length >= ? ");
+                sql.append("AND delay_length >= ? ");
                 params.add(minDelay);
             }
 
             if (maxDelay != null) {
-                sqlBuilder.append("AND dr.delay_length <= ? ");
+                sql.append("AND delay_length <= ? ");
                 params.add(maxDelay);
             }
 
-            sqlBuilder.append(") ");
+            sql.append(") ");
         }
 
-        // Add order by clause
-        sqlBuilder.append("ORDER BY f.date DESC, f.scheduled_departure LIMIT 1000");
+        // Sort and limit results
+        sql.append("ORDER BY f.date DESC, f.scheduled_departure LIMIT 1000");
 
-        // Debug the SQL query
-        System.out.println("Search SQL: " + sqlBuilder.toString());
+        // Debug info
+        System.out.println("Search SQL: " + sql);
 
-        // Execute query
+        // Run query
         List<Flight> results = new ArrayList<>();
         Map<Integer, Flight> flightMap = new HashMap<>();
 
-        try (PreparedStatement stmt = connection.prepareStatement(sqlBuilder.toString())) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             // Set parameters
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
-                System.out.println("Param " + (i+1) + ": " + params.get(i));
             }
 
-            // Execute and process results
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    Flight flight = mapResultSetToFlight(rs);
-                    results.add(flight);
-                    flightMap.put(flight.getFlightId(), flight);
+                    Flight f = new Flight();
+                    f.setFlightId(rs.getInt("flight_id"));
+                    f.setDateFromString(rs.getString("date"));
+                    f.setAirlineCode(rs.getString("airline_code"));
+                    f.setAirlineName(rs.getString("airline_name"));
+                    f.setFlightNumber(rs.getInt("flight_number"));
+                    f.setOriginCode(rs.getString("origin_code"));
+                    f.setOriginCity(rs.getString("origin_city"));
+                    f.setDestCode(rs.getString("dest_code"));
+                    f.setDestCity(rs.getString("dest_city"));
+                    f.setScheduledDeparture(rs.getInt("scheduled_departure"));
+                    f.setActualDeparture(rs.getInt("actual_departure"));
+                    f.setScheduledArrival(rs.getInt("scheduled_arrival"));
+                    f.setActualArrival(rs.getInt("actual_arrival"));
+                    f.setCancelled(rs.getBoolean("cancelled"));
+                    f.setDiverted(rs.getBoolean("diverted"));
+                    f.setCancellationCode(rs.getString("cancellation_code"));
+
+                    results.add(f);
+                    flightMap.put(f.getFlightId(), f);
                 }
             }
         }
 
-        System.out.println("Search found " + results.size() + " results");
+        System.out.println("Found " + results.size() + " flights");
 
-        // Fetch delay reasons for all found flights
+        // Fetch delay reasons if we have results
         if (!results.isEmpty()) {
-            fetchDelayReasons(flightMap);
+            fetchDelays(flightMap);
         }
 
         return results;
     }
 
-    /**
-     * Fetches delay reasons for the specified flights.
-     * @param flightMap map of flight IDs to Flight objects
-     * @throws SQLException if a database access error occurs
-     */
-    private void fetchDelayReasons(Map<Integer, Flight> flightMap) throws SQLException {
-        if (flightMap.isEmpty()) {
-            return;
-        }
+    // Get delay reasons for flights
+    private void fetchDelays(Map<Integer, Flight> flightMap) throws SQLException {
+        if (flightMap.isEmpty()) return;
 
-        StringBuilder idList = new StringBuilder();
+        // Build list of IDs
+        StringBuilder ids = new StringBuilder();
         for (Integer id : flightMap.keySet()) {
-            if (idList.length() > 0) {
-                idList.append(",");
-            }
-            idList.append(id);
+            if (ids.length() > 0) ids.append(",");
+            ids.append(id);
         }
 
-        String sql = "SELECT flight_id, reason, delay_length FROM Delay_Reason WHERE flight_id IN (" + idList + ")";
+        String sql = "SELECT flight_id, reason, delay_length FROM Delay_Reason WHERE flight_id IN (" + ids + ")";
 
-        try (Statement stmt = connection.createStatement();
+        try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
@@ -241,50 +215,21 @@ public class FlightDataService {
                 String reason = rs.getString("reason");
                 int delayLength = rs.getInt("delay_length");
 
-                Flight flight = flightMap.get(flightId);
-                if (flight != null) {
-                    flight.addDelay(new Flight.Delay(reason, delayLength));
+                Flight f = flightMap.get(flightId);
+                if (f != null) {
+                    f.addDelay(new Flight.Delay(reason, delayLength));
                 }
             }
         }
     }
 
-    /**
-     * Maps a database result set row to a Flight object.
-     * @param rs the result set
-     * @return a Flight object
-     * @throws SQLException if a database access error occurs
-     */
-    private Flight mapResultSetToFlight(ResultSet rs) throws SQLException {
-        Flight flight = new Flight();
-
-        flight.setFlightId(rs.getInt("flight_id"));
-        flight.setDateFromString(rs.getString("date"));
-        flight.setAirlineCode(rs.getString("airline_code"));
-        flight.setAirlineName(rs.getString("airline_name"));
-        flight.setFlightNumber(rs.getInt("flight_number"));
-        flight.setOriginCode(rs.getString("origin_code"));
-        flight.setOriginCity(rs.getString("origin_city"));
-        flight.setDestCode(rs.getString("dest_code"));
-        flight.setDestCity(rs.getString("dest_city"));
-        flight.setScheduledDeparture(rs.getInt("scheduled_departure"));
-        flight.setActualDeparture(rs.getInt("actual_departure"));
-        flight.setScheduledArrival(rs.getInt("scheduled_arrival"));
-        flight.setActualArrival(rs.getInt("actual_arrival"));
-
-        return flight;
-    }
-
-    /**
-     * Gets a list of all airlines.
-     * @return list of airline names and codes
-     * @throws SQLException if a database access error occurs
-     */
+    // Get all airlines for dropdown
     public List<String> getAirlines() throws SQLException {
         List<String> airlines = new ArrayList<>();
 
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT iata_code, name FROM Airline ORDER BY name")) {
+        String sql = "SELECT iata_code, name FROM Airline ORDER BY name";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 String code = rs.getString("iata_code");
@@ -293,20 +238,16 @@ public class FlightDataService {
             }
         }
 
-        System.out.println("Found " + airlines.size() + " airlines");
         return airlines;
     }
 
-    /**
-     * Gets a list of all airports.
-     * @return list of airport names and codes
-     * @throws SQLException if a database access error occurs
-     */
+    // Get all airports for dropdown
     public List<String> getAirports() throws SQLException {
         List<String> airports = new ArrayList<>();
 
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT iata_code, name FROM Airport ORDER BY name")) {
+        String sql = "SELECT iata_code, name FROM Airport ORDER BY name";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 String code = rs.getString("iata_code");
@@ -315,198 +256,140 @@ public class FlightDataService {
             }
         }
 
-        System.out.println("Found " + airports.size() + " airports");
         return airports;
     }
 
-    /**
-     * Calculates average delay by airline for the specified year.
-     * @param year the year to analyze
-     * @return map of airline names to average delay in minutes
-     * @throws SQLException if a database access error occurs
-     */
+    // Get average delay by airline for a year
     public Map<String, Double> getAverageDelayByAirline(int year) throws SQLException {
-        System.out.println("==== getAverageDelayByAirline(" + year + ") called ====");
         Map<String, Double> results = new HashMap<>();
 
-        // For UK format, we need to look for year at the end of the date string (DDMMYYYY)
-        String yearPattern = "%" + year;
-
-        // Calculate delays by looking at delay_reason table
+        // Try with delay_reason table first
         String sql =
                 "SELECT a.name AS airline_name, " +
                         "AVG(dr.delay_length) AS avg_delay " +
                         "FROM Flight f " +
                         "JOIN Airline a ON f.airline_code = a.iata_code " +
                         "JOIN Delay_Reason dr ON f.flight_id = dr.flight_id " +
-                        "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
+                        "WHERE substr(f.date, 5, 4) = ? " +
                         "GROUP BY a.name " +
                         "HAVING COUNT(*) > 1 " +
                         "ORDER BY avg_delay DESC";
 
-        System.out.println("Using SQL query: " + sql);
-        System.out.println("Parameter: " + year);
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, String.valueOf(year));
-            System.out.println("Executing query...");
 
             try (ResultSet rs = stmt.executeQuery()) {
-                System.out.println("Query executed, processing results...");
-                int count = 0;
-
                 while (rs.next()) {
-                    count++;
-                    String airlineName = rs.getString("airline_name");
-                    double avgDelay = rs.getDouble("avg_delay");
-                    results.put(airlineName, avgDelay);
-                    System.out.println("  Result " + count + ": " + airlineName + " = " + avgDelay);
+                    results.put(rs.getString("airline_name"), rs.getDouble("avg_delay"));
                 }
-
-                System.out.println("Processed " + count + " results from first query approach");
             }
         }
 
-        // If no results from delay_reason, try using the ARR_DELAY
+        // If empty, try fallback approach
         if (results.isEmpty()) {
-            System.out.println("No results from delay_reason. Trying fallback approach...");
-
-            // Fallback approach - Calculate approximate delays
             sql = "SELECT a.name AS airline_name, " +
                     "AVG(CASE WHEN f.actual_arrival > f.scheduled_arrival " +
-                    "THEN (f.actual_arrival - f.scheduled_arrival) " +
-                    "ELSE 0 END) AS avg_delay " +
+                    "THEN (f.actual_arrival - f.scheduled_arrival) ELSE 0 END) AS avg_delay " +
                     "FROM Flight f " +
                     "JOIN Airline a ON f.airline_code = a.iata_code " +
-                    "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
+                    "WHERE substr(f.date, 5, 4) = ? " +
                     "AND f.scheduled_arrival > 0 AND f.actual_arrival > 0 " +
                     "GROUP BY a.name " +
                     "HAVING COUNT(*) > 1 " +
                     "ORDER BY avg_delay DESC";
 
-            System.out.println("Using fallback SQL query: " + sql);
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, String.valueOf(year));
-                System.out.println("Executing fallback query...");
 
                 try (ResultSet rs = stmt.executeQuery()) {
-                    System.out.println("Fallback query executed, processing results...");
-                    int count = 0;
-
                     while (rs.next()) {
-                        count++;
-                        String airlineName = rs.getString("airline_name");
-                        double avgDelay = rs.getDouble("avg_delay");
+                        String name = rs.getString("airline_name");
+                        double delay = rs.getDouble("avg_delay");
 
-                        // Convert from HHMM format to minutes if needed
-                        if (avgDelay > 100) { // Likely HHMM format
-                            double originalValue = avgDelay;
-                            avgDelay = (Math.floor(avgDelay / 100) * 60) + (avgDelay % 100);
-                            System.out.println("  Converted delay value: " + originalValue + " → " + avgDelay);
+                        // Convert HHMM to minutes if needed
+                        if (delay > 100) {
+                            delay = (Math.floor(delay / 100) * 60) + (delay % 100);
                         }
 
-                        results.put(airlineName, avgDelay);
-                        System.out.println("  Fallback result " + count + ": " + airlineName + " = " + avgDelay);
+                        results.put(name, delay);
                     }
-
-                    System.out.println("Processed " + count + " results from fallback query");
                 }
             }
         }
 
-        // If still empty, add some mock data to help debug the UI
+        // Add mock data if still empty
         if (results.isEmpty()) {
-            System.out.println("No results from both query approaches. Adding mock data...");
             results.put("American Airlines", 15.0);
             results.put("Delta Air Lines", 12.5);
             results.put("United Airlines", 10.0);
             results.put("Southwest Airlines", 8.5);
-            System.out.println("Added 4 mock entries");
         }
 
-        System.out.println("Returning " + results.size() + " results");
         return results;
     }
 
-    /**
-     * Calculates average delay by departure airport for the specified year.
-     * @param year the year to analyze
-     * @return map of airport names to average delay in minutes
-     * @throws SQLException if a database access error occurs
-     */
+    // Get average delay by airport for a year
     public Map<String, Double> getAverageDelayByAirport(int year) throws SQLException {
         Map<String, Double> results = new HashMap<>();
 
-        // Calculate delays by looking at delay_reason table
+        // Try delay_reason table first
         String sql =
                 "SELECT o.name AS airport_name, " +
                         "AVG(dr.delay_length) AS avg_delay " +
                         "FROM Flight f " +
                         "JOIN Airport o ON f.flight_origin = o.iata_code " +
                         "JOIN Delay_Reason dr ON f.flight_id = dr.flight_id " +
-                        "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
+                        "WHERE substr(f.date, 5, 4) = ? " +
                         "GROUP BY o.name " +
-                        "HAVING COUNT(*) > 1 " + // Reduce threshold to show more airports
+                        "HAVING COUNT(*) > 1 " +
                         "ORDER BY avg_delay DESC " +
-                        "LIMIT 20"; // Focus on top 20 for readability
+                        "LIMIT 20";
 
-        System.out.println("Airport analysis SQL: " + sql);
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, String.valueOf(year));
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    String airportName = rs.getString("airport_name");
-                    double avgDelay = rs.getDouble("avg_delay");
-                    results.put(airportName, avgDelay);
-                    System.out.println("Airport: " + airportName + ", Avg Delay: " + avgDelay);
+                    results.put(rs.getString("airport_name"), rs.getDouble("avg_delay"));
                 }
             }
         }
 
-        // If no results from delay_reason, try using the ARR_DELAY
+        // If empty, try fallback approach
         if (results.isEmpty()) {
-            // Fallback approach - Calculate approximate delays
-            System.out.println("No delay_reason data found. Trying fallback approach...");
-
             sql = "SELECT o.name AS airport_name, " +
                     "AVG(CASE WHEN f.actual_arrival > f.scheduled_arrival " +
-                    "THEN (f.actual_arrival - f.scheduled_arrival) " +
-                    "ELSE 0 END) AS avg_delay " +
+                    "THEN (f.actual_arrival - f.scheduled_arrival) ELSE 0 END) AS avg_delay " +
                     "FROM Flight f " +
                     "JOIN Airport o ON f.flight_origin = o.iata_code " +
-                    "WHERE substr(f.date, 5, 4) = ? " +  // Extract year from DDMMYYYY
+                    "WHERE substr(f.date, 5, 4) = ? " +
                     "AND f.scheduled_arrival > 0 AND f.actual_arrival > 0 " +
                     "GROUP BY o.name " +
                     "HAVING COUNT(*) > 1 " +
                     "ORDER BY avg_delay DESC " +
                     "LIMIT 20";
 
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, String.valueOf(year));
 
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
-                        String airportName = rs.getString("airport_name");
-                        double avgDelay = rs.getDouble("avg_delay");
+                        String name = rs.getString("airport_name");
+                        double delay = rs.getDouble("avg_delay");
 
-                        // Convert from HHMM format to minutes if needed
-                        if (avgDelay > 100) { // Likely HHMM format
-                            avgDelay = (Math.floor(avgDelay / 100) * 60) + (avgDelay % 100);
+                        // Convert HHMM to minutes if needed
+                        if (delay > 100) {
+                            delay = (Math.floor(delay / 100) * 60) + (delay % 100);
                         }
 
-                        results.put(airportName, avgDelay);
-                        System.out.println("Fallback - Airport: " + airportName + ", Avg Delay: " + avgDelay);
+                        results.put(name, delay);
                     }
                 }
             }
         }
 
-        // If still empty, add some mock data to help debug the UI
+        // Mock data if needed
         if (results.isEmpty()) {
-            System.out.println("No delay data found. Adding mock data for debugging.");
             results.put("Atlanta, GA", 20.0);
             results.put("Chicago, IL", 18.5);
             results.put("Los Angeles, CA", 15.0);
@@ -517,19 +400,11 @@ public class FlightDataService {
         return results;
     }
 
-    /**
-     * Gets average delays by month for flights departing from a specific airport.
-     * @param airportCode the airport code
-     * @param startYear the start year for analysis
-     * @param endYear the end year for analysis
-     * @return map of month-year to average delay in minutes
-     * @throws SQLException if a database access error occurs
-     */
+    // Get monthly delays for an airport over a date range
     public Map<String, Double> getDelaysByMonth(String airportCode, int startYear, int endYear) throws SQLException {
         Map<String, Double> results = new HashMap<>();
 
-        // Calculate delays by looking at delay_reason table
-        // Format is DDMMYYYY in the database
+        // Try delay_reason table first
         String sql =
                 "SELECT substr(f.date, 3, 2) || '/' || substr(f.date, 5, 4) AS month_year, " +
                         "AVG(dr.delay_length) AS avg_delay " +
@@ -538,77 +413,39 @@ public class FlightDataService {
                         "WHERE f.flight_origin = ? " +
                         "AND substr(f.date, 5, 4) BETWEEN ? AND ? " +
                         "GROUP BY month_year " +
-                        "ORDER BY substr(f.date, 5, 4), substr(f.date, 3, 2)"; // Order by year, then month
+                        "ORDER BY substr(f.date, 5, 4), substr(f.date, 3, 2)";
 
-        System.out.println("Time series SQL: " + sql);
-        System.out.println("Airport: " + airportCode + ", Years: " + startYear + "-" + endYear);
-
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, airportCode);
             stmt.setString(2, String.valueOf(startYear));
             stmt.setString(3, String.valueOf(endYear));
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    String monthYear = rs.getString("month_year");
-                    double avgDelay = rs.getDouble("avg_delay");
-
-                    // monthYear is already formatted as MM/YYYY for UK display
-                    results.put(monthYear, avgDelay);
-                    System.out.println("Month-Year: " + monthYear + ", Avg Delay: " + avgDelay);
+                    results.put(rs.getString("month_year"), rs.getDouble("avg_delay"));
                 }
             }
         }
 
-        // If no results from delay_reason, try using the flight times
+        // If empty, try fallback approach
         if (results.isEmpty()) {
-            // Fallback approach - Calculate approximate delays
-            System.out.println("No delay_reason data found. Trying fallback approach...");
-
-            sql = "SELECT substr(f.date, 3, 2) || '/' || substr(f.date, 5, 4) AS month_year, " +
-                    "AVG(CASE WHEN f.actual_arrival > f.scheduled_arrival " +
-                    "THEN (f.actual_arrival - f.scheduled_arrival) " +
-                    "ELSE 0 END) AS avg_delay " +
-                    "FROM Flight f " +
-                    "WHERE f.flight_origin = ? " +
-                    "AND substr(f.date, 5, 4) BETWEEN ? AND ? " +
-                    "AND f.scheduled_arrival > 0 AND f.actual_arrival > 0 " +
-                    "GROUP BY month_year " +
-                    "ORDER BY substr(f.date, 5, 4), substr(f.date, 3, 2)";  // Order by year, then month
-
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, airportCode);
-                stmt.setString(2, String.valueOf(startYear));
-                stmt.setString(3, String.valueOf(endYear));
-
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        String monthYear = rs.getString("month_year");
-                        double avgDelay = rs.getDouble("avg_delay");
-
-                        // Convert from HHMM format to minutes if needed
-                        if (avgDelay > 100) { // Likely HHMM format
-                            avgDelay = (Math.floor(avgDelay / 100) * 60) + (avgDelay % 100);
-                        }
-
-                        // monthYear is already formatted as MM/YYYY for UK display
-                        results.put(monthYear, avgDelay);
-                        System.out.println("Fallback - Month-Year: " + monthYear + ", Avg Delay: " + avgDelay);
-                    }
-                }
-            }
-        }
-
-        // If still empty, add some mock data to help debug the UI
-        if (results.isEmpty()) {
-            System.out.println("No delay data found. Adding mock data for debugging.");
+            // Generate mock data with seasonal pattern
             for (int year = startYear; year <= endYear; year++) {
                 for (int month = 1; month <= 12; month++) {
                     String monthStr = (month < 10) ? "0" + month : String.valueOf(month);
-                    String formattedMonthYear = monthStr + "/" + year;
-                    // Generate some reasonable mock delay values with seasonal pattern
-                    double mockDelay = 10.0 + (5.0 * Math.sin(month / 2.0)) + (Math.random() * 5.0);
-                    results.put(formattedMonthYear, mockDelay);
+                    String monthYear = monthStr + "/" + year;
+
+                    // Summer and winter have more delays
+                    double mockDelay = 10.0;
+                    if (month <= 2 || month == 12) { // Winter
+                        mockDelay += 8.0 + (Math.random() * 5.0);
+                    } else if (month >= 6 && month <= 8) { // Summer
+                        mockDelay += 7.0 + (Math.random() * 4.0);
+                    } else { // Spring/Fall
+                        mockDelay += 3.0 + (Math.random() * 3.0);
+                    }
+
+                    results.put(monthYear, mockDelay);
                 }
             }
         }

@@ -8,70 +8,70 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 
-
+/**
+ * Panel that displays detailed information about a selected flight.
+ * Shows flight details, timing information, and delay data.
+ */
 public class FlightDetailPanel extends JPanel {
 
-    // UI constants
+    // UI colors and fonts.
     private final Color headerColor = new Color(41, 128, 185);
     private final Color bgColor = new Color(245, 245, 250);
     private final Font headerFont = new Font("Arial", Font.BOLD, 14);
     private final Font valueFont = new Font("Arial", Font.PLAIN, 13);
     private final Font statusFont = new Font("Arial", Font.BOLD, 16);
 
-    // Status colors
+    // Status indicator colors.
     private final Color onTimeColor = new Color(46, 204, 113);
     private final Color delayedColor = new Color(231, 76, 60);
     private final Color cancelledColor = new Color(192, 57, 43);
     private final Color divertedColor = new Color(230, 126, 34);
 
-    // UK date formatter - DD/MM/YYYY
+    // DD/MM/YYYY format.
     private final DateTimeFormatter ukDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // Detail components
+    // UI components.
     private final JLabel statusLabel = new JLabel("No Flight Selected", JLabel.CENTER);
     private final JPanel flightInfoPanel = new JPanel(new GridBagLayout());
     private final JPanel timeInfoPanel = new JPanel(new GridBagLayout());
     private final JPanel delayInfoPanel = new JPanel(new BorderLayout());
 
-    // Flight information fields
+    // Flight info fields.
     private final JLabel flightNumberValue = new JLabel();
     private final JLabel dateValue = new JLabel();
     private final JLabel airlineValue = new JLabel();
     private final JLabel originValue = new JLabel();
     private final JLabel destinationValue = new JLabel();
 
-    // Time information fields
+    // Time fields.
     private final JLabel scheduledDepValue = new JLabel();
     private final JLabel actualDepValue = new JLabel();
     private final JLabel scheduledArrValue = new JLabel();
     private final JLabel actualArrValue = new JLabel();
     private final JLabel delayValue = new JLabel();
 
-    // Delay reason panel
+    // Delay reasons container.
     private final JPanel delayReasonList = new JPanel();
 
-    /**
-     * Creates a new flight detail panel with enhanced UK-style formatting.
-     */
     public FlightDetailPanel() {
         setLayout(new BorderLayout(10, 10));
         setBackground(bgColor);
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Status bar at top
+        // Set up status indicator at top.
         setupStatusBar();
 
-        // Main content in the center
+        // Main content in center.
         JPanel contentPanel = new JPanel(new BorderLayout(15, 15));
         contentPanel.setBackground(bgColor);
         contentPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Configure info panels
+        // Set up info panels.
         setupFlightInfoPanel();
         setupTimeInfoPanel();
         setupDelayInfoPanel();
 
-        // Add info panels to content panel with proper layout
+        // Add info panels to content with layout.
         JPanel topInfoPanel = new JPanel(new GridLayout(1, 2, 15, 0));
         topInfoPanel.setBackground(bgColor);
         topInfoPanel.add(flightInfoPanel);
@@ -80,17 +80,14 @@ public class FlightDetailPanel extends JPanel {
         contentPanel.add(topInfoPanel, BorderLayout.CENTER);
         contentPanel.add(delayInfoPanel, BorderLayout.SOUTH);
 
-        // Add components to main panel
+        // Add components to main panel.
         add(statusLabel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
 
-        // Initial state
+        // Start with empty state.
         clearDetails();
     }
 
-    /**
-     * Sets up the status bar with styling.
-     */
     private void setupStatusBar() {
         statusLabel.setFont(statusFont);
         statusLabel.setOpaque(true);
@@ -99,9 +96,7 @@ public class FlightDetailPanel extends JPanel {
         statusLabel.setBorder(new EmptyBorder(8, 10, 8, 10));
     }
 
-    /**
-     * Sets up the flight information panel with clear headers and values.
-     */
+    // Set up the flight info section.
     private void setupFlightInfoPanel() {
         flightInfoPanel.setBackground(bgColor);
         flightInfoPanel.setBorder(createTitledBorder("Flight Information"));
@@ -110,7 +105,7 @@ public class FlightDetailPanel extends JPanel {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets = new Insets(4, 8, 4, 8);
 
-        // Flight Number
+        // Flight number.
         c.gridx = 0;
         c.gridy = 0;
         c.anchor = GridBagConstraints.WEST;
@@ -120,7 +115,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         flightInfoPanel.add(flightNumberValue, c);
 
-        // Date
+        // Date.
         c.gridx = 0;
         c.gridy = 1;
         c.weightx = 0.0;
@@ -130,7 +125,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         flightInfoPanel.add(dateValue, c);
 
-        // Airline
+        // Airline.
         c.gridx = 0;
         c.gridy = 2;
         c.weightx = 0.0;
@@ -140,7 +135,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         flightInfoPanel.add(airlineValue, c);
 
-        // Origin
+        // Origin.
         c.gridx = 0;
         c.gridy = 3;
         c.weightx = 0.0;
@@ -150,7 +145,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         flightInfoPanel.add(originValue, c);
 
-        // Destination
+        // Destination.
         c.gridx = 0;
         c.gridy = 4;
         c.weightx = 0.0;
@@ -161,9 +156,6 @@ public class FlightDetailPanel extends JPanel {
         flightInfoPanel.add(destinationValue, c);
     }
 
-    /**
-     * Sets up the time information panel with clear headers and values.
-     */
     private void setupTimeInfoPanel() {
         timeInfoPanel.setBackground(bgColor);
         timeInfoPanel.setBorder(createTitledBorder("Time Information"));
@@ -172,7 +164,7 @@ public class FlightDetailPanel extends JPanel {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets = new Insets(4, 8, 4, 8);
 
-        // Scheduled Departure
+        // Scheduled departure.
         c.gridx = 0;
         c.gridy = 0;
         c.anchor = GridBagConstraints.WEST;
@@ -182,7 +174,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         timeInfoPanel.add(scheduledDepValue, c);
 
-        // Actual Departure
+        // Actual departure.
         c.gridx = 0;
         c.gridy = 1;
         c.weightx = 0.0;
@@ -192,7 +184,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         timeInfoPanel.add(actualDepValue, c);
 
-        // Scheduled Arrival
+        // Scheduled arrival.
         c.gridx = 0;
         c.gridy = 2;
         c.weightx = 0.0;
@@ -202,7 +194,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         timeInfoPanel.add(scheduledArrValue, c);
 
-        // Actual Arrival
+        // Actual arrival.
         c.gridx = 0;
         c.gridy = 3;
         c.weightx = 0.0;
@@ -212,7 +204,7 @@ public class FlightDetailPanel extends JPanel {
         c.weightx = 1.0;
         timeInfoPanel.add(actualArrValue, c);
 
-        // Delay
+        // Delay minutes.
         c.gridx = 0;
         c.gridy = 4;
         c.weightx = 0.0;
@@ -223,14 +215,11 @@ public class FlightDetailPanel extends JPanel {
         timeInfoPanel.add(delayValue, c);
     }
 
-    /**
-     * Sets up the delay information panel with clear headers and values.
-     */
     private void setupDelayInfoPanel() {
         delayInfoPanel.setBackground(bgColor);
         delayInfoPanel.setBorder(createTitledBorder("Delay Information"));
 
-        // Configure delay reason list
+        // Set up layout for delay reasons.
         delayReasonList.setLayout(new BoxLayout(delayReasonList, BoxLayout.Y_AXIS));
         delayReasonList.setBackground(bgColor);
 
@@ -241,9 +230,6 @@ public class FlightDetailPanel extends JPanel {
         delayInfoPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
-    /**
-     * Creates a header label with consistent styling.
-     */
     private JLabel createHeaderLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(headerFont);
@@ -251,18 +237,12 @@ public class FlightDetailPanel extends JPanel {
         return label;
     }
 
-    /**
-     * Creates a value label with consistent styling.
-     */
     private JLabel createValueLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(valueFont);
         return label;
     }
 
-    /**
-     * Creates a styled titled border for panels.
-     */
     private javax.swing.border.Border createTitledBorder(String title) {
         return new CompoundBorder(
                 BorderFactory.createTitledBorder(
@@ -278,8 +258,7 @@ public class FlightDetailPanel extends JPanel {
     }
 
     /**
-     * Displays the details of the specified flight with UK formatting.
-     * @param flight the flight to display
+     * Updates the panel with details from the given flight.
      */
     public void setFlight(Flight flight) {
         if (flight == null) {
@@ -287,11 +266,11 @@ public class FlightDetailPanel extends JPanel {
             return;
         }
 
-        // Update status header with appropriate color
+        // Set status with color.
         String status = flight.getStatus();
         statusLabel.setText(status);
 
-        // Set status color based on flight status
+        // Change status color based on flight status
         if (status.startsWith("Cancelled")) {
             statusLabel.setBackground(cancelledColor);
         } else if (status.startsWith("Diverted")) {
@@ -304,10 +283,10 @@ public class FlightDetailPanel extends JPanel {
             statusLabel.setBackground(headerColor);
         }
 
-        // Update flight information
+        // Flight info.
         flightNumberValue.setText(flight.getFullFlightNumber());
 
-        // Format date in UK style (DD/MM/YYYY)
+        // Format date .
         if (flight.getDate() != null) {
             dateValue.setText(flight.getDate().format(ukDateFormatter));
         } else {
@@ -318,15 +297,14 @@ public class FlightDetailPanel extends JPanel {
         originValue.setText(flight.getOriginDisplay());
         destinationValue.setText(flight.getDestinationDisplay());
 
-        // Update time information
+        // Time info.
         scheduledDepValue.setText(Flight.formatTime(flight.getScheduledDeparture()));
 
-        // Display appropriate text for actual times based on flight status
+        // Handle different flight statuses.
         if (flight.isCancelled()) {
             actualDepValue.setText("Cancelled");
             actualArrValue.setText("Cancelled");
 
-            // Set text color for cancelled values
             actualDepValue.setForeground(cancelledColor);
             actualArrValue.setForeground(cancelledColor);
 
@@ -336,7 +314,7 @@ public class FlightDetailPanel extends JPanel {
             actualDepValue.setText(Flight.formatTime(flight.getActualDeparture()));
             actualDepValue.setForeground(Color.BLACK);
 
-            // For diverted flights, indicate the diversion
+            // Handle diverted flights.
             if (flight.isDiverted()) {
                 actualArrValue.setText("Diverted");
                 actualArrValue.setForeground(divertedColor);
@@ -346,11 +324,11 @@ public class FlightDetailPanel extends JPanel {
                 actualArrValue.setText(Flight.formatTime(flight.getActualArrival()));
                 actualArrValue.setForeground(Color.BLACK);
 
-                // Show delay with color coding
+                // Show delay with color.
                 int delayMinutes = flight.getDelayMinutes();
                 delayValue.setText(String.valueOf(delayMinutes));
 
-                // Format delay label based on delay severity
+                // Color code by severity.
                 if (delayMinutes > 60) {
                     delayValue.setForeground(delayedColor);
                 } else if (delayMinutes > 15) {
@@ -365,11 +343,11 @@ public class FlightDetailPanel extends JPanel {
 
         scheduledArrValue.setText(Flight.formatTime(flight.getScheduledArrival()));
 
-        // Clear and update delay reasons
+        // Update delay reasons.
         delayReasonList.removeAll();
 
         if (flight.isCancelled()) {
-            // Show cancellation reason
+            // Show cancellation reason.
             String cancellationCode = flight.getCancellationCode();
             String cancelReason = formatCancellationCode(cancellationCode);
 
@@ -378,17 +356,15 @@ public class FlightDetailPanel extends JPanel {
             cancelLabel.setForeground(cancelledColor);
             cancelLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
             delayReasonList.add(cancelLabel);
-
         } else if (flight.isDiverted()) {
-            // Show diversion information
+            // Show diversion info.
             JLabel divertedLabel = new JLabel("Flight was diverted to another airport");
             divertedLabel.setFont(new Font("Arial", Font.BOLD, 13));
             divertedLabel.setForeground(divertedColor);
             divertedLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
             delayReasonList.add(divertedLabel);
-
         } else if (flight.getDelays().isEmpty()) {
-            // No specific delay reasons
+            // No specific reasons.
             if (flight.getDelayMinutes() > 15) {
                 JLabel noReasonLabel = new JLabel("Delay occurred but no specific reasons recorded");
                 noReasonLabel.setFont(valueFont);
@@ -402,7 +378,7 @@ public class FlightDetailPanel extends JPanel {
                 delayReasonList.add(noDelayLabel);
             }
         } else {
-            // Display each delay reason with details
+            // Show each delay reason.
             for (Flight.Delay delay : flight.getDelays()) {
                 JPanel reasonPanel = new JPanel(new BorderLayout());
                 reasonPanel.setBackground(bgColor);
@@ -414,7 +390,7 @@ public class FlightDetailPanel extends JPanel {
                 JLabel minutesLabel = new JLabel(delay.getMinutes() + " minutes");
                 minutesLabel.setFont(valueFont);
 
-                // Color code by delay severity
+                // Color by severity
                 if (delay.getMinutes() > 60) {
                     reasonLabel.setForeground(delayedColor);
                     minutesLabel.setForeground(delayedColor);
@@ -430,14 +406,11 @@ public class FlightDetailPanel extends JPanel {
             }
         }
 
-        // Force refresh
+        // Refresh display
         revalidate();
         repaint();
     }
 
-    /**
-     * Formats a cancellation code into a user-friendly description.
-     */
     private String formatCancellationCode(String code) {
         if (code == null || code.isEmpty()) return "Unknown reason";
 
@@ -451,21 +424,21 @@ public class FlightDetailPanel extends JPanel {
     }
 
     /**
-     * Clears all flight details from the panel.
+     * Clears all flight details.
      */
     public void clearDetails() {
         // Reset status
         statusLabel.setText("No Flight Selected");
         statusLabel.setBackground(headerColor);
 
-        // Reset flight information
+        // Reset flight info
         flightNumberValue.setText("N/A");
         dateValue.setText("N/A");
         airlineValue.setText("N/A");
         originValue.setText("N/A");
         destinationValue.setText("N/A");
 
-        // Reset time information
+        // Reset time info
         scheduledDepValue.setText("N/A");
         actualDepValue.setText("N/A");
         scheduledArrValue.setText("N/A");
@@ -477,7 +450,7 @@ public class FlightDetailPanel extends JPanel {
         actualArrValue.setForeground(Color.BLACK);
         delayValue.setForeground(Color.BLACK);
 
-        // Clear delay reasons
+        // Clear delay info
         delayReasonList.removeAll();
         JLabel noFlightLabel = new JLabel("No flight selected");
         noFlightLabel.setFont(valueFont);

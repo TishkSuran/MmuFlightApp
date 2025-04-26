@@ -28,116 +28,112 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Enhanced panel for displaying analysis charts with UK-specific formatting.
+ * Panel for displaying flight analysis charts.
+ * Uses UK-specific date formatting.
  */
 public class AnalysisPanel extends JPanel {
 
-    // UI constants
-    private final Color primaryColor = new Color(41, 128, 185);
-    private final Color secondaryColor = new Color(231, 76, 60);
-    private final Color backgroundColor = new Color(245, 245, 250);
-    private final Font headerFont = new Font("Arial", Font.BOLD, 14);
-    private final Font labelFont = new Font("Arial", Font.PLAIN, 12);
+    // Colours.
+    private final Color blueColour = new Color(41, 128, 185);
+    private final Color redColour = new Color(231, 76, 60);
+    private final Color bgColour = new Color(245, 245, 250);
 
-    // Components
+    // Fonts.
+    private final Font titleFont = new Font("Arial", Font.BOLD, 16);
+    private final Font headerFont = new Font("Arial", Font.BOLD, 14);
+    private final Font normalFont = new Font("Arial", Font.PLAIN, 12);
+
+    // UI components.
     private final JPanel chartPanel;
     private final JPanel summaryPanel;
     private final JLabel chartTitleLabel;
     private final JTextArea summaryTextArea;
-
-    // Chart state tracking
-    private String currentChartType = "none";
+    private String currentChart = "none";
 
     /**
-     * Creates a new simplified analysis panel with UK formatting.
+     * Creates a new analysis panel.
      */
     public AnalysisPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(backgroundColor);
+        setBackground(bgColour);
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Create chart panel with placeholder
+        // Chart area setup.
         chartPanel = new JPanel(new BorderLayout());
-        chartPanel.setBackground(backgroundColor);
-        chartPanel.setBorder(createTitledBorder("Analysis Chart"));
+        chartPanel.setBackground(bgColour);
+        chartPanel.setBorder(createBorder("Analysis Chart"));
 
-        // Create header for chart title
+        // Title label.
         chartTitleLabel = new JLabel("No Analysis Selected", JLabel.CENTER);
-        chartTitleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        chartTitleLabel.setForeground(primaryColor);
+        chartTitleLabel.setFont(titleFont);
+        chartTitleLabel.setForeground(blueColour);
         chartTitleLabel.setBorder(new EmptyBorder(5, 0, 10, 0));
 
-        // Create summary panel
+        // Summary area setup.
         summaryPanel = new JPanel(new BorderLayout());
-        summaryPanel.setBackground(backgroundColor);
-        summaryPanel.setBorder(createTitledBorder("Analysis Summary"));
+        summaryPanel.setBackground(bgColour);
+        summaryPanel.setBorder(createBorder("Analysis Summary"));
 
+        // Text area for analysis text.
         summaryTextArea = new JTextArea();
         summaryTextArea.setEditable(false);
         summaryTextArea.setLineWrap(true);
         summaryTextArea.setWrapStyleWord(true);
         summaryTextArea.setFont(new Font("Arial", Font.PLAIN, 13));
-        summaryTextArea.setBackground(backgroundColor);
+        summaryTextArea.setBackground(bgColour);
         summaryTextArea.setBorder(new EmptyBorder(5, 5, 5, 5));
 
         JScrollPane summaryScrollPane = new JScrollPane(summaryTextArea);
         summaryScrollPane.setBorder(BorderFactory.createEmptyBorder());
         summaryPanel.add(summaryScrollPane, BorderLayout.CENTER);
 
-        // Add instruction label to chart panel
-        showWelcomeMessage();
+        // Show welcome screen initially.
+        showWelcomeScreen();
 
-        // Layout components
-        setLayout(new BorderLayout(10, 10));
-
-        // Create split pane for chart and summary
+        // Layout with split pane.
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setTopComponent(chartPanel);
         splitPane.setBottomComponent(summaryPanel);
-        splitPane.setResizeWeight(0.7); // Give more weight to the chart
+        splitPane.setResizeWeight(0.7);
         splitPane.setDividerLocation(400);
 
         add(splitPane, BorderLayout.CENTER);
     }
 
     /**
-     * Creates a styled titled border for panels.
+     * Creates a titled border with standard style.
      */
-    private javax.swing.border.Border createTitledBorder(String title) {
+    private javax.swing.border.Border createBorder(String title) {
         return new CompoundBorder(
                 BorderFactory.createTitledBorder(
-                        BorderFactory.createLineBorder(primaryColor, 1),
+                        BorderFactory.createLineBorder(blueColour, 1),
                         title,
                         javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
                         javax.swing.border.TitledBorder.DEFAULT_POSITION,
                         headerFont,
-                        primaryColor
+                        blueColour
                 ),
                 BorderFactory.createEmptyBorder(8, 8, 8, 8)
         );
     }
 
     /**
-     * Displays welcome message and instructions.
+     * Shows the initial welcome screen.
      */
-    private void showWelcomeMessage() {
-        // Clear chart panel
+    private void showWelcomeScreen() {
         chartPanel.removeAll();
-
-        // Update title
         chartTitleLabel.setText("Flight Analysis");
         chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
 
-        // Create instruction panel
-        JPanel instructionPanel = new JPanel();
-        instructionPanel.setLayout(new BoxLayout(instructionPanel, BoxLayout.Y_AXIS));
-        instructionPanel.setBackground(backgroundColor);
-        instructionPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        // Welcome message.
+        JPanel welcomePanel = new JPanel();
+        welcomePanel.setLayout(new BoxLayout(welcomePanel, BoxLayout.Y_AXIS));
+        welcomePanel.setBackground(bgColour);
+        welcomePanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Add instructions
         JLabel welcomeLabel = new JLabel("Welcome to Flight Analysis");
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        welcomeLabel.setForeground(primaryColor);
+        welcomeLabel.setForeground(blueColour);
         welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JTextArea instructionText = new JTextArea(
@@ -151,120 +147,108 @@ public class AnalysisPanel extends JPanel {
         instructionText.setLineWrap(true);
         instructionText.setWrapStyleWord(true);
         instructionText.setFont(new Font("Arial", Font.PLAIN, 14));
-        instructionText.setBackground(backgroundColor);
+        instructionText.setBackground(bgColour);
         instructionText.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Add to instruction panel
-        instructionPanel.add(welcomeLabel);
-        instructionPanel.add(Box.createVerticalStrut(20));
-        instructionPanel.add(instructionText);
+        welcomePanel.add(welcomeLabel);
+        welcomePanel.add(Box.createVerticalStrut(20));
+        welcomePanel.add(instructionText);
+        chartPanel.add(welcomePanel, BorderLayout.CENTER);
 
-        // Add to chart panel
-        chartPanel.add(instructionPanel, BorderLayout.CENTER);
-
-        // Update summary text
+        // Basic instructions
         summaryTextArea.setText("Select an analysis type from the Analysis menu to get started.\n\n" +
                 "The analysis will be displayed in the chart area above, and a summary of findings " +
                 "will appear here. You can resize this panel by dragging the divider bar.");
 
-        // Refresh UI
         revalidate();
         repaint();
     }
 
     /**
-     * Displays a chart of average delay by airline with UK formatting.
+     * Shows airline delay comparison chart.
      */
     public void showAirlineDelayChart(Map<String, Double> data, int year) {
-        currentChartType = "airline";
+        currentChart = "airline";
 
-        // Create dataset
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-        // Sort data by delay in descending order
-        TreeMap<Double, String> sortedData = new TreeMap<>((a, b) -> b.compareTo(a));
+        // Sort airlines by delay time (descending).
+        TreeMap<Double, String> sortedAirlines = new TreeMap<>((a, b) -> b.compareTo(a));
         for (Map.Entry<String, Double> entry : data.entrySet()) {
-            sortedData.put(entry.getValue(), entry.getKey());
+            sortedAirlines.put(entry.getValue(), entry.getKey());
         }
 
-        // Add top airlines to dataset (limit to top 10 for readability)
+        // Create chart dataset with top 10 airlines.
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         int count = 0;
-        for (Map.Entry<Double, String> entry : sortedData.entrySet()) {
+        for (Map.Entry<Double, String> entry : sortedAirlines.entrySet()) {
             dataset.addValue(entry.getKey(), "Delay", entry.getValue());
             count++;
-            if (count >= 10) break; // Limit to top 10
+            if (count >= 10) break;
         }
 
-        // Create chart
+        // Create horizontal bar chart.
         JFreeChart chart = ChartFactory.createBarChart(
-                null,  // Title set separately
-                "Airline",               // X-Axis Label
-                "Average Delay (minutes)", // Y-Axis Label
-                dataset,                 // Dataset
-                PlotOrientation.HORIZONTAL, // Orientation
-                false,                   // Show Legend
-                true,                    // Use tooltips
-                false                    // Generate URLs
+                null,
+                "Airline",
+                "Average Delay (minutes)",
+                dataset,
+                PlotOrientation.HORIZONTAL,
+                false,
+                true,
+                false
         );
 
-        // Customize chart appearance
-        chart.setBackgroundPaint(backgroundColor);
-
+        // Style the chart.
+        chart.setBackgroundPaint(bgColour);
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setOutlinePaint(null);
         plot.setRangeGridlinePaint(new Color(230, 230, 230));
 
-        // Customize renderer
+        // Style the bars.
         BarRenderer renderer = (BarRenderer) plot.getRenderer();
         renderer.setBarPainter(new StandardBarPainter());
-        renderer.setSeriesPaint(0, primaryColor);
+        renderer.setSeriesPaint(0, blueColour);
         renderer.setShadowVisible(false);
 
-        // Improve axis appearance
-        CategoryAxis domainAxis = plot.getDomainAxis();
-        domainAxis.setTickLabelFont(labelFont);
-        domainAxis.setLabelFont(headerFont);
-
-        plot.getRangeAxis().setTickLabelFont(labelFont);
+        // Style the axes.
+        CategoryAxis xAxis = plot.getDomainAxis();
+        xAxis.setTickLabelFont(normalFont);
+        xAxis.setLabelFont(headerFont);
+        plot.getRangeAxis().setTickLabelFont(normalFont);
         plot.getRangeAxis().setLabelFont(headerFont);
 
-        // Create chart panel
-        ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(600, 400));
-        chartPanel.setBackground(backgroundColor);
+        // Create and add chart panel.
+        ChartPanel chartComponent = new ChartPanel(chart);
+        chartComponent.setPreferredSize(new Dimension(600, 400));
+        chartComponent.setBackground(bgColour);
 
-        // Update the panel
-        this.chartPanel.removeAll();
-
-        // Add title
+        // Update UI.
+        chartPanel.removeAll();
         chartTitleLabel.setText("Average Delay by Airline in " + year);
-        this.chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
+        chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
+        chartPanel.add(chartComponent, BorderLayout.CENTER);
 
-        // Add chart
-        this.chartPanel.add(chartPanel, BorderLayout.CENTER);
-
-        // Generate summary text
+        // Create summary text.
         StringBuilder summary = new StringBuilder();
         summary.append("Average Delay by Airline in ").append(year).append("\n\n");
 
         if (data.isEmpty()) {
-            summary.append("No delay data available for the selected year.");
+            summary.append("No delay data available for ").append(year).append(".");
         } else {
-            // Calculate overall average
+            // Calculate overall average.
             double totalDelay = 0;
             for (Double delay : data.values()) {
                 totalDelay += delay;
             }
             double avgDelay = totalDelay / data.size();
 
-            summary.append("Analysis shows the average delay times across ")
+            summary.append("This chart shows average delay times across ")
                     .append(data.size()).append(" airlines in ").append(year).append(".\n\n");
 
-            // Top 3 airlines with most delays
+            // Top 3 airlines with most delays.
             count = 0;
             summary.append("Airlines with longest average delays:\n");
-            for (Map.Entry<Double, String> entry : sortedData.entrySet()) {
+            for (Map.Entry<Double, String> entry : sortedAirlines.entrySet()) {
                 summary.append("• ").append(entry.getValue())
                         .append(": ").append(String.format("%.1f", entry.getKey()))
                         .append(" minutes\n");
@@ -278,268 +262,247 @@ public class AnalysisPanel extends JPanel {
 
         // Update summary text
         summaryTextArea.setText(summary.toString());
-
-        // Refresh UI
         revalidate();
         repaint();
     }
 
     /**
-     * Displays a chart of average delay by airport with UK formatting.
+     * Shows airport delay comparison chart.
      */
     public void showAirportDelayChart(Map<String, Double> data, int year) {
-        currentChartType = "airport";
+        currentChart = "airport";
 
-        // Create dataset
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-        // Sort data by delay in descending order
-        TreeMap<Double, String> sortedData = new TreeMap<>((a, b) -> b.compareTo(a));
+        // Sort airports by delay time (descending).
+        TreeMap<Double, String> sortedAirports = new TreeMap<>((a, b) -> b.compareTo(a));
         for (Map.Entry<String, Double> entry : data.entrySet()) {
-            sortedData.put(entry.getValue(), entry.getKey());
+            sortedAirports.put(entry.getValue(), entry.getKey());
         }
 
-        // Add top airports to dataset (limit to top 10 for readability)
+        // Create dataset with top 10 airports.
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         int count = 0;
-        for (Map.Entry<Double, String> entry : sortedData.entrySet()) {
+        for (Map.Entry<Double, String> entry : sortedAirports.entrySet()) {
             dataset.addValue(entry.getKey(), "Delay", entry.getValue());
-            count++;
-            if (count >= 10) break; // Limit to top 10
+            if (++count >= 10) break;
         }
 
-        // Create chart
+        // Create horizontal bar chart.
         JFreeChart chart = ChartFactory.createBarChart(
-                null,  // Title set separately
-                "Airport",               // X-Axis Label
-                "Average Delay (minutes)", // Y-Axis Label
-                dataset,                 // Dataset
-                PlotOrientation.HORIZONTAL, // Orientation
-                false,                   // Show Legend
-                true,                    // Use tooltips
-                false                    // Generate URLs
+                null,
+                "Airport",
+                "Average Delay (minutes)",
+                dataset,
+                PlotOrientation.HORIZONTAL,
+                false,
+                true,
+                false
         );
 
-        // Customize chart appearance
-        chart.setBackgroundPaint(backgroundColor);
-
+        // Style the chart.
+        chart.setBackgroundPaint(bgColour);
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setOutlinePaint(null);
         plot.setRangeGridlinePaint(new Color(230, 230, 230));
 
-        // Customize renderer
+        // Style the bars - use red for airports.
         BarRenderer renderer = (BarRenderer) plot.getRenderer();
         renderer.setBarPainter(new StandardBarPainter());
-        renderer.setSeriesPaint(0, secondaryColor);
+        renderer.setSeriesPaint(0, redColour);
         renderer.setShadowVisible(false);
 
-        // Improve axis appearance
-        CategoryAxis domainAxis = plot.getDomainAxis();
-        domainAxis.setTickLabelFont(labelFont);
-        domainAxis.setLabelFont(headerFont);
-
-        plot.getRangeAxis().setTickLabelFont(labelFont);
+        // Style the axes.
+        CategoryAxis xAxis = plot.getDomainAxis();
+        xAxis.setTickLabelFont(normalFont);
+        xAxis.setLabelFont(headerFont);
+        plot.getRangeAxis().setTickLabelFont(normalFont);
         plot.getRangeAxis().setLabelFont(headerFont);
 
-        // Create chart panel
-        ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(600, 400));
-        chartPanel.setBackground(backgroundColor);
+        // Create and add chart panel.
+        ChartPanel chartComponent = new ChartPanel(chart);
+        chartComponent.setPreferredSize(new Dimension(600, 400));
+        chartComponent.setBackground(bgColour);
 
-        // Update the panel
-        this.chartPanel.removeAll();
-
-        // Add title
+        // Update UI.
+        chartPanel.removeAll();
         chartTitleLabel.setText("Average Delay by Airport in " + year);
-        this.chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
+        chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
+        chartPanel.add(chartComponent, BorderLayout.CENTER);
 
-        // Add chart
-        this.chartPanel.add(chartPanel, BorderLayout.CENTER);
-
-        // Generate summary text
+        // Create summary.
         StringBuilder summary = new StringBuilder();
         summary.append("Average Delay by Airport in ").append(year).append("\n\n");
 
         if (data.isEmpty()) {
-            summary.append("No delay data available for the selected year.");
+            summary.append("No airport delay data available for ").append(year).append(".");
         } else {
-            // Calculate overall average
-            double totalDelay = 0;
+            // Calculate overall average.
+            double total = 0;
             for (Double delay : data.values()) {
-                totalDelay += delay;
+                total += delay;
             }
-            double avgDelay = totalDelay / data.size();
+            double avg = total / data.size();
 
-            summary.append("Analysis shows the average departure delay times across ")
+            summary.append("This chart shows the average departure delay times across ")
                     .append(data.size()).append(" airports in ").append(year).append(".\n\n");
 
-            // Top 3 airports with most delays
+            // Top 3 worst airports.
             count = 0;
             summary.append("Airports with longest average delays:\n");
-            for (Map.Entry<Double, String> entry : sortedData.entrySet()) {
+            for (Map.Entry<Double, String> entry : sortedAirports.entrySet()) {
                 summary.append("• ").append(entry.getValue())
                         .append(": ").append(String.format("%.1f", entry.getKey()))
                         .append(" minutes\n");
-                count++;
-                if (count >= 3) break;
+                if (++count >= 3) break;
             }
 
             summary.append("\nOverall average delay across all airports: ")
-                    .append(String.format("%.1f", avgDelay)).append(" minutes.");
+                    .append(String.format("%.1f", avg)).append(" minutes.");
 
-            summary.append("\n\nFactors that typically contribute to airport delays include:");
-            summary.append("\n• Weather conditions");
-            summary.append("\n• Airport congestion");
-            summary.append("\n• Air traffic control constraints");
+            // Add common delay factors.
+            summary.append("\n\nCommon factors that contribute to airport delays:");
+            summary.append("\n• Poor weather");
+            summary.append("\n• Congestion and capacity issues");
+            summary.append("\n• Air traffic control problems");
             summary.append("\n• Airline operational issues");
         }
 
-        // Update summary text
         summaryTextArea.setText(summary.toString());
-
-        // Refresh UI
         revalidate();
         repaint();
     }
 
     /**
-     * Displays a chart of average delay over time for a specific airport with UK date formatting.
+     * Shows time series chart for an airport.
      */
     public void showTimeSeriesChart(Map<String, Double> data, String airportName) {
-        currentChartType = "timeseries";
+        currentChart = "timeseries";
 
-        // Create time series
+        // Create time series for the chart.
         TimeSeries series = new TimeSeries("Average Delay");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/yyyy");
 
-        // UK date format
-        SimpleDateFormat ukDateFormat = new SimpleDateFormat("MM/yyyy");
-
-        // Add data to series in chronological order
+        // Add each data point to the series.
         for (Map.Entry<String, Double> entry : data.entrySet()) {
             try {
-                // Parse month/year
-                Date date = ukDateFormat.parse(entry.getKey());
+                // Parse the date (MM/YYYY).
+                Date date = dateFormat.parse(entry.getKey());
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(date);
 
-                int month = cal.get(Calendar.MONTH) + 1; // Calendar months are 0-based
+                // Calendar months are 0-based (0=Jan).
+                int month = cal.get(Calendar.MONTH) + 1;
                 int year = cal.get(Calendar.YEAR);
 
                 series.add(new Month(month, year), entry.getValue());
             } catch (ParseException e) {
-                System.err.println("Invalid month/year format: " + entry.getKey());
+                // Skip invalid dates.
+                System.err.println("Bad date format: " + entry.getKey());
             }
         }
 
-        // Create dataset
+        // Add to dataset.
         TimeSeriesCollection dataset = new TimeSeriesCollection();
         dataset.addSeries(series);
 
-        // Create chart
+        // Create the line chart.
         JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                null,  // Title set separately
-                "Date",                   // X-Axis Label
-                "Average Delay (minutes)", // Y-Axis Label
-                dataset,                  // Dataset
-                false,                    // Show Legend
-                true,                     // Use tooltips
-                false                     // Generate URLs
+                null,
+                "Date",
+                "Average Delay (minutes)",
+                dataset,
+                false,
+                true,
+                false
         );
 
-        // Customize chart appearance
-        chart.setBackgroundPaint(backgroundColor);
-
+        // Style the chart.
+        chart.setBackgroundPaint(bgColour);
         XYPlot plot = chart.getXYPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setOutlinePaint(null);
         plot.setDomainGridlinePaint(new Color(230, 230, 230));
         plot.setRangeGridlinePaint(new Color(230, 230, 230));
 
-        // Customize renderer
+        // Style the line.
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        renderer.setSeriesPaint(0, primaryColor);
+        renderer.setSeriesPaint(0, blueColour);
         renderer.setSeriesStroke(0, new BasicStroke(2.0f));
-        renderer.setSeriesShapesVisible(0, true);
+        renderer.setSeriesShapesVisible(0, true); // Show points
         plot.setRenderer(renderer);
 
-        // Customize date axis with UK format (DD/MM/YYYY)
+        // Format x-axis as dates (MM/YYYY).
         DateAxis dateAxis = (DateAxis) plot.getDomainAxis();
-        dateAxis.setDateFormatOverride(new SimpleDateFormat("MM/yyyy")); // Show as month/year
-        dateAxis.setTickLabelFont(labelFont);
+        dateAxis.setDateFormatOverride(new SimpleDateFormat("MM/yyyy"));
+        dateAxis.setTickLabelFont(normalFont);
         dateAxis.setLabelFont(headerFont);
-
-        plot.getRangeAxis().setTickLabelFont(labelFont);
+        plot.getRangeAxis().setTickLabelFont(normalFont);
         plot.getRangeAxis().setLabelFont(headerFont);
 
-        // Create chart panel
-        ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(600, 400));
-        chartPanel.setBackground(backgroundColor);
+        // Create and add chart panel.
+        ChartPanel chartComponent = new ChartPanel(chart);
+        chartComponent.setPreferredSize(new Dimension(600, 400));
+        chartComponent.setBackground(bgColour);
 
-        // Update the panel
-        this.chartPanel.removeAll();
-
-        // Add title
+        // Update UI.
+        chartPanel.removeAll();
         chartTitleLabel.setText("Delay Trends for " + airportName);
-        this.chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
+        chartPanel.add(chartTitleLabel, BorderLayout.NORTH);
+        chartPanel.add(chartComponent, BorderLayout.CENTER);
 
-        // Add chart
-        this.chartPanel.add(chartPanel, BorderLayout.CENTER);
-
-        // Generate summary text
+        // Create summary text.
         StringBuilder summary = new StringBuilder();
-        summary.append("Delay Trends Analysis for ").append(airportName).append("\n\n");
+        summary.append("Delay Trends for ").append(airportName).append("\n\n");
 
-        if (data.isEmpty()) {
-            summary.append("No delay trend data available for this airport.");
+        if (data.isEmpty() || data.size() < 2) {
+            summary.append("Insufficient data to show trends for this airport.");
         } else {
-            // Calculate statistics
-            double totalDelay = 0;
-            double maxDelay = Double.MIN_VALUE;
-            double minDelay = Double.MAX_VALUE;
+            // Find min, max, avg.
+            double total = 0;
+            double max = -1;
+            double min = Double.MAX_VALUE;
             String peakMonth = "";
-            String lowestMonth = "";
+            String lowMonth = "";
 
             for (Map.Entry<String, Double> entry : data.entrySet()) {
                 double delay = entry.getValue();
-                totalDelay += delay;
+                total += delay;
 
-                if (delay > maxDelay) {
-                    maxDelay = delay;
+                // Track highest delay.
+                if (delay > max) {
+                    max = delay;
                     peakMonth = entry.getKey();
                 }
 
-                if (delay < minDelay) {
-                    minDelay = delay;
-                    lowestMonth = entry.getKey();
+                // Track lowest delay.
+                if (delay < min) {
+                    min = delay;
+                    lowMonth = entry.getKey();
                 }
             }
 
-            double avgDelay = totalDelay / data.size();
+            double avg = total / data.size();
 
-            summary.append("This chart shows how average flight delays have changed over time ")
+            summary.append("This chart shows how flight delays have changed over time ")
                     .append("for departures from ").append(airportName).append(".\n\n");
 
-            summary.append("Key findings:\n");
-            summary.append("• Average delay across all months: ")
-                    .append(String.format("%.1f", avgDelay)).append(" minutes\n");
-            summary.append("• Peak delay: ").append(String.format("%.1f", maxDelay))
-                    .append(" minutes in ").append(peakMonth).append("\n");
-            summary.append("• Lowest delay: ").append(String.format("%.1f", minDelay))
-                    .append(" minutes in ").append(lowestMonth).append("\n\n");
+            // Key stats.
+            summary.append("Key stats:\n");
+            summary.append("• Avg delay: ").append(String.format("%.1f", avg)).append(" mins\n");
+            summary.append("• Worst month: ").append(peakMonth)
+                    .append(" (").append(String.format("%.1f", max)).append(" mins)\n");
+            summary.append("• Best month: ").append(lowMonth)
+                    .append(" (").append(String.format("%.1f", min)).append(" mins)\n\n");
 
-            // Seasonal pattern analysis
-            summary.append("Possible factors affecting seasonal delay patterns include:");
-            summary.append("\n• Weather conditions (winter snowfall, summer thunderstorms)");
-            summary.append("\n• Holiday traffic increases (summer holidays, Christmas period)");
-            summary.append("\n• Scheduled maintenance periods");
-            summary.append("\n• Air traffic and staffing changes");
+            // Common factors.
+            summary.append("Factors affecting seasonal delay patterns:");
+            summary.append("\n• Weather (winter snow, summer storms)");
+            summary.append("\n• Holiday periods (summer holidays, Christmas)");
+            summary.append("\n• Maintenance schedules");
+            summary.append("\n• Staffing and ATC variations");
         }
 
-        // Update summary text
         summaryTextArea.setText(summary.toString());
-
-        // Refresh UI
         revalidate();
         repaint();
     }

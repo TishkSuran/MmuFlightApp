@@ -11,46 +11,33 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
- * Simplified search panel with UK-specific formatting.
- * Features a cleaner interface with UK date formats (ddMMyyyy).
- * Fixed to properly handle delay search options.
+ * Search panel for querying flight data with UK date formatting.
  */
 public class SearchPanel extends JPanel {
 
-    // Colors for a clean, professional look
+    // UI appearance.
     private final Color panelBackground = new Color(245, 245, 250);
     private final Color borderColor = new Color(41, 128, 185);
     private final Font labelFont = new Font("Arial", Font.BOLD, 12);
 
-    // Search components
+    // Main input components.
     private final JComboBox<String> airlineComboBox;
     private final JTextField flightNumberField;
     private final JComboBox<String> originComboBox;
     private final JComboBox<String> destinationComboBox;
-
-    // UK formatted date fields
     private final JFormattedTextField startDateField;
     private final JFormattedTextField endDateField;
-
-    // Delay filter components
     private final JSpinner minDelaySpinner;
     private final JSpinner maxDelaySpinner;
     private final JComboBox<String> delayReasonComboBox;
-
-    // Status filter components
     private final JCheckBox includeCancelledCheckbox;
     private final JCheckBox includeDivertedCheckbox;
-
-    // Action buttons
     private final JButton searchButton;
     private final JButton clearButton;
 
-    // UK date formatter - DD/MM/YYYY
-    private final DateTimeFormatter ukDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    // UK date format - DD/MM/YYYY.
+    private final DateTimeFormatter ukDateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    /**
-     * Creates a new simplified search panel with UK formatting.
-     */
     public SearchPanel(List<String> airlines, List<String> airports,
                        ActionListener searchListener, ActionListener clearListener) {
         setLayout(new BorderLayout(10, 10));
@@ -63,162 +50,60 @@ public class SearchPanel extends JPanel {
         ));
         setBackground(panelBackground);
 
-        // Create main panels for organization
+        // Create the two main panels.
         JPanel leftPanel = createPanel("Flight Information");
         JPanel rightPanel = createPanel("Date & Delay");
 
-        // Create components with UK specifications
-        airlineComboBox = createComboBox(airlines, "Start typing to filter or select airline");
+        // Set up components.
+        airlineComboBox = createComboBox(airlines, "Select airline or type to search");
         flightNumberField = createTextField("e.g. BA123");
-        originComboBox = createComboBox(airports, "Start typing to filter or select origin airport");
-        destinationComboBox = createComboBox(airports, "Start typing to filter or select destination airport");
+        originComboBox = createComboBox(airports, "Select origin airport");
+        destinationComboBox = createComboBox(airports, "Select destination airport");
 
-        // UK formatted date fields
+        // Date fields.
         startDateField = createDateField();
         endDateField = createDateField();
-
-        // Set to current date as default
         setDateFieldToToday(startDateField);
         setDateFieldToToday(endDateField);
 
-        // Delay components - FIXED: proper default values and max range
-        SpinnerNumberModel minDelayModel = new SpinnerNumberModel(0, 0, 1440, 5);
-        minDelaySpinner = new JSpinner(minDelayModel);
+        // Spinner for delay values (max 24 hours).
+        minDelaySpinner = new JSpinner(new SpinnerNumberModel(0, 0, 1440, 5));
+        maxDelaySpinner = new JSpinner(new SpinnerNumberModel(0, 0, 1440, 5));
 
-        SpinnerNumberModel maxDelayModel = new SpinnerNumberModel(0, 0, 1440, 5);
-        maxDelaySpinner = new JSpinner(maxDelayModel);
-
-        // Delay reason dropdown
-        delayReasonComboBox = new JComboBox<>(new String[]{
+        // Delay reasons.
+        String[] reasons = {
                 "Any Reason", "Airline (CARRIER)", "Weather", "Air Traffic (NAS)",
                 "Security", "Late Aircraft"
-        });
+        };
+        delayReasonComboBox = new JComboBox<>(reasons);
 
-        // Status filters
+        // Flight status options.
         includeCancelledCheckbox = new JCheckBox("Include Cancelled Flights", true);
         includeDivertedCheckbox = new JCheckBox("Include Diverted Flights", true);
 
-        // Build left panel - flight information
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 0;
-        c.gridwidth = 1;
-        c.weightx = 0;
+        // Build left panel (flight info).
+        addFlightInfoControls(leftPanel);
 
-        leftPanel.add(createLabel("Airline:"), c);
+        // Build right panel (dates and delays).
+        addDateDelayControls(rightPanel);
 
-        c.gridx = 1;
-        c.weightx = 1;
-        leftPanel.add(airlineComboBox, c);
-
-        c.gridx = 0;
-        c.gridy = 1;
-        c.weightx = 0;
-        leftPanel.add(createLabel("Flight Number:"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        leftPanel.add(flightNumberField, c);
-
-        c.gridx = 0;
-        c.gridy = 2;
-        c.weightx = 0;
-        leftPanel.add(createLabel("Origin:"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        leftPanel.add(originComboBox, c);
-
-        c.gridx = 0;
-        c.gridy = 3;
-        c.weightx = 0;
-        leftPanel.add(createLabel("Destination:"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        leftPanel.add(destinationComboBox, c);
-
-        c.gridx = 0;
-        c.gridy = 4;
-        c.weightx = 0;
-        c.gridwidth = 2;
-        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        checkboxPanel.setBackground(panelBackground);
-        checkboxPanel.add(includeCancelledCheckbox);
-        checkboxPanel.add(includeDivertedCheckbox);
-        leftPanel.add(checkboxPanel, c);
-
-        // Build right panel - date and delay information
-        c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 0;
-        c.gridwidth = 1;
-        c.weightx = 0;
-
-        rightPanel.add(createLabel("Start Date (DD/MM/YYYY):"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        rightPanel.add(startDateField, c);
-
-        c.gridx = 0;
-        c.gridy = 1;
-        c.weightx = 0;
-        rightPanel.add(createLabel("End Date (DD/MM/YYYY):"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        rightPanel.add(endDateField, c);
-
-        c.gridx = 0;
-        c.gridy = 2;
-        c.weightx = 0;
-        rightPanel.add(createLabel("Min Delay (min):"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        rightPanel.add(minDelaySpinner, c);
-
-        c.gridx = 0;
-        c.gridy = 3;
-        c.weightx = 0;
-        rightPanel.add(createLabel("Max Delay (min):"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        rightPanel.add(maxDelaySpinner, c);
-
-        c.gridx = 0;
-        c.gridy = 4;
-        c.weightx = 0;
-        rightPanel.add(createLabel("Delay Reason:"), c);
-
-        c.gridx = 1;
-        c.weightx = 1;
-        rightPanel.add(delayReasonComboBox, c);
-
-        // Create button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBackground(panelBackground);
-
+        // Create and set up buttons.
         searchButton = new JButton("Search");
+        searchButton.addActionListener(searchListener);
         searchButton.setBackground(borderColor);
         searchButton.setForeground(Color.BLACK);
         searchButton.setFont(new Font("Arial", Font.BOLD, 12));
-        searchButton.addActionListener(searchListener);
 
         clearButton = new JButton("Clear");
-        clearButton.setFont(new Font("Arial", Font.BOLD, 12));
         clearButton.addActionListener(clearListener);
+        clearButton.setFont(new Font("Arial", Font.BOLD, 12));
 
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(panelBackground);
         buttonPanel.add(clearButton);
         buttonPanel.add(searchButton);
 
-        // Layout panels
+        // Layout main panels.
         JPanel mainPanel = new JPanel(new GridLayout(1, 2, 15, 0));
         mainPanel.setBackground(panelBackground);
         mainPanel.add(leftPanel);
@@ -228,9 +113,122 @@ public class SearchPanel extends JPanel {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    /**
-     * Creates a styled panel with title.
-     */
+    // Set up the flight information side.
+    private void addFlightInfoControls(JPanel panel) {
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets = new Insets(5, 5, 5, 5);
+
+        // Airline.
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weightx = 0;
+        panel.add(createLabel("Airline:"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(airlineComboBox, c);
+
+        // Flight number.
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 0;
+        panel.add(createLabel("Flight Number:"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(flightNumberField, c);
+
+        // Origin.
+        c.gridx = 0;
+        c.gridy = 2;
+        c.weightx = 0;
+        panel.add(createLabel("Origin:"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(originComboBox, c);
+
+        // Destination.
+        c.gridx = 0;
+        c.gridy = 3;
+        c.weightx = 0;
+        panel.add(createLabel("Destination:"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(destinationComboBox, c);
+
+        // Status checkboxes.
+        c.gridx = 0;
+        c.gridy = 4;
+        c.weightx = 0;
+        c.gridwidth = 2;
+        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        checkboxPanel.setBackground(panelBackground);
+        checkboxPanel.add(includeCancelledCheckbox);
+        checkboxPanel.add(includeDivertedCheckbox);
+        panel.add(checkboxPanel, c);
+    }
+
+    // Set up the date and delay filter controls.
+    private void addDateDelayControls(JPanel panel) {
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets = new Insets(5, 5, 5, 5);
+
+        // Start date.
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weightx = 0;
+        panel.add(createLabel("Start Date (DD/MM/YYYY):"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(startDateField, c);
+
+        // End date.
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 0;
+        panel.add(createLabel("End Date (DD/MM/YYYY):"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(endDateField, c);
+
+        // Min delay.
+        c.gridx = 0;
+        c.gridy = 2;
+        c.weightx = 0;
+        panel.add(createLabel("Min Delay (min):"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(minDelaySpinner, c);
+
+        // Max delay.
+        c.gridx = 0;
+        c.gridy = 3;
+        c.weightx = 0;
+        panel.add(createLabel("Max Delay (min):"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(maxDelaySpinner, c);
+
+        // Delay reason.
+        c.gridx = 0;
+        c.gridy = 4;
+        c.weightx = 0;
+        panel.add(createLabel("Delay Reason:"), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        panel.add(delayReasonComboBox, c);
+    }
+
+    // Creates a panel with a title.
     private JPanel createPanel(String title) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder(title));
@@ -238,79 +236,72 @@ public class SearchPanel extends JPanel {
         return panel;
     }
 
-    /**
-     * Creates a styled label.
-     */
+    // Creates a standard label.
     private JLabel createLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(labelFont);
         return label;
     }
 
-    /**
-     * Creates a styled text field with placeholder.
-     */
-    private JTextField createTextField(String placeholder) {
+    // Creates a text field with tooltip.
+    private JTextField createTextField(String tooltip) {
         JTextField field = new JTextField();
-        field.setToolTipText(placeholder);
+        field.setToolTipText(tooltip);
         return field;
     }
 
-    /**
-     * Creates a combo box with items and autocomplete.
-     */
+    // Creates a combo box with the given items.
     private JComboBox<String> createComboBox(List<String> items, String tooltip) {
         JComboBox<String> comboBox = new JComboBox<>();
         comboBox.setEditable(true);
         comboBox.setToolTipText(tooltip);
 
-        // Add empty option
+        // Add empty option.
         comboBox.addItem("");
 
-        // Add items
-        for (String item : items) {
-            comboBox.addItem(item);
+        // Add all items.
+        if (items != null) {
+            for (String item : items) {
+                comboBox.addItem(item);
+            }
         }
 
         return comboBox;
     }
 
-    /**
-     * Creates a UK formatted date field (DD/MM/YYYY).
-     */
+    // Creates a date field.
     private JFormattedTextField createDateField() {
         JFormattedTextField field = new JFormattedTextField();
         field.setColumns(10);
-
-        // Set placeholder/tool tip
         field.setToolTipText("DD/MM/YYYY");
-
         return field;
     }
 
-    /**
-     * Sets a date field to today's date in UK format.
-     */
+    // Sets a date field to today's date.
     private void setDateFieldToToday(JFormattedTextField field) {
-        field.setText(LocalDate.now().format(ukDateFormatter));
+        field.setText(LocalDate.now().format(ukDateFormat));
     }
 
     /**
-     * Clears all search fields and resets to defaults.
+     * Resets all search fields to their default values.
      */
     public void clearFields() {
+        // Reset dropdowns and text.
         airlineComboBox.setSelectedIndex(0);
         flightNumberField.setText("");
         originComboBox.setSelectedIndex(0);
         destinationComboBox.setSelectedIndex(0);
 
-        // Reset dates to today
+        // Reset dates.
         setDateFieldToToday(startDateField);
         setDateFieldToToday(endDateField);
 
+        // Reset delay filters.
         minDelaySpinner.setValue(0);
         maxDelaySpinner.setValue(0);
         delayReasonComboBox.setSelectedIndex(0);
+
+        // Reset checkboxes.
         includeCancelledCheckbox.setSelected(true);
         includeDivertedCheckbox.setSelected(true);
     }
@@ -324,7 +315,7 @@ public class SearchPanel extends JPanel {
             return null;
         }
 
-        // Extract airline code if a selection was made from dropdown
+        // Extract code if from format "XXX - Name".
         if (airline.contains(" - ")) {
             return airline.substring(0, airline.indexOf(" - "));
         }
@@ -333,7 +324,7 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Gets the entered flight number or null if none entered.
+     * Gets the entered flight number or null if empty.
      */
     public String getFlightNumber() {
         String flightNumber = flightNumberField.getText().trim();
@@ -341,7 +332,7 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Gets the selected origin airport or null if none selected.
+     * Gets the selected origin airport or null if none.
      */
     public String getOrigin() {
         String origin = (String) originComboBox.getSelectedItem();
@@ -349,7 +340,7 @@ public class SearchPanel extends JPanel {
             return null;
         }
 
-        // Extract airport code if a selection was made from dropdown
+        // Extract airport code if needed.
         if (origin.contains(" - ")) {
             return origin.substring(0, origin.indexOf(" - "));
         }
@@ -358,7 +349,7 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Gets the selected destination airport or null if none selected.
+     * Gets the selected destination airport or null if none.
      */
     public String getDestination() {
         String destination = (String) destinationComboBox.getSelectedItem();
@@ -366,7 +357,7 @@ public class SearchPanel extends JPanel {
             return null;
         }
 
-        // Extract airport code if a selection was made from dropdown
+        // Extract airport code if needed.
         if (destination.contains(" - ")) {
             return destination.substring(0, destination.indexOf(" - "));
         }
@@ -375,40 +366,35 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Gets the selected start date in UK format or null if invalid.
+     * Gets the selected start date in UK format.
+     * Returns null if the date is invalid.
      */
     public LocalDate getStartDate() {
         try {
             String dateText = startDateField.getText().trim();
             if (dateText.isEmpty()) return null;
-
-            // Parse date in UK format (DD/MM/YYYY)
-            return LocalDate.parse(dateText, ukDateFormatter);
+            return LocalDate.parse(dateText, ukDateFormat);
         } catch (DateTimeParseException e) {
-            // If parsing fails, return null
-            return null;
+            return null; // Invalid date format.
         }
     }
 
     /**
-     * Gets the selected end date in UK format or null if invalid.
+     * Gets the selected end date in UK format.
+     * Returns null if the date is invalid.
      */
     public LocalDate getEndDate() {
         try {
             String dateText = endDateField.getText().trim();
             if (dateText.isEmpty()) return null;
-
-            // Parse date in UK format (DD/MM/YYYY)
-            return LocalDate.parse(dateText, ukDateFormatter);
+            return LocalDate.parse(dateText, ukDateFormat);
         } catch (DateTimeParseException e) {
-            // If parsing fails, return null
-            return null;
+            return null; // Invalid date format.
         }
     }
 
     /**
-     * Gets the minimum delay or null if not specified.
-     * FIXED: Now properly returns null when value is 0
+     * Gets the minimum delay or null if zero.
      */
     public Integer getMinDelay() {
         int minDelay = (Integer) minDelaySpinner.getValue();
@@ -416,8 +402,7 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Gets the maximum delay or null if not specified.
-     * FIXED: Now properly returns null when value is 0
+     * Gets the maximum delay or null if zero.
      */
     public Integer getMaxDelay() {
         int maxDelay = (Integer) maxDelaySpinner.getValue();
@@ -425,14 +410,13 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Gets the selected delay reason or null if none selected.
-     * FIXED: Proper mapping from UI to database values
+     * Gets the selected delay reason code.
      */
     public String getDelayReason() {
         int index = delayReasonComboBox.getSelectedIndex();
         if (index <= 0) return null;
 
-        // Convert user-friendly names to database codes
+        // Map UI labels to database codes.
         switch (index) {
             case 1: return "CARRIER";
             case 2: return "WEATHER";
@@ -444,14 +428,14 @@ public class SearchPanel extends JPanel {
     }
 
     /**
-     * Checks if cancelled flights should be included in search results.
+     * Checks if cancelled flights should be included.
      */
     public boolean includeCancelled() {
         return includeCancelledCheckbox.isSelected();
     }
 
     /**
-     * Checks if diverted flights should be included in search results.
+     * Checks if diverted flights should be included.
      */
     public boolean includeDiverted() {
         return includeDivertedCheckbox.isSelected();
