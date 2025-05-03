@@ -681,7 +681,7 @@ public class CsvImporter {
                     return day + month + year; // Returns DDMMYYYY
                 }
             } catch (Exception e) {
-                logError("Error standardizing date format: " + dateStr + " - " + e.getMessage());
+                logError("Error standardising date format: " + dateStr + " - " + e.getMessage());
             }
         }
 

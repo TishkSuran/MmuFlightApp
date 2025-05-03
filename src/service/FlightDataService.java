@@ -65,11 +65,11 @@ public class FlightDataService {
         if (flightNumber != null && !flightNumber.trim().isEmpty()) {
             String fn = flightNumber.trim();
 
-            // Try to parse the number part
+            // Try to parse the number part.
             try {
-                // Check if starts with letters (airline code)
+                // Check if starts with letters (airline code).
                 if (Character.isLetter(fn.charAt(0))) {
-                    // Split into airline code and number
+                    // Split into airline code and number.
                     int i = 0;
                     while (i < fn.length() && Character.isLetter(fn.charAt(i))) i++;
 
@@ -82,31 +82,31 @@ public class FlightDataService {
                         params.add(Integer.parseInt(numPart));
                     }
                 } else {
-                    // Just a flight number
+                    // Just a flight number.
                     sql.append("AND f.flight_number = ? ");
                     params.add(Integer.parseInt(fn));
                 }
             } catch (Exception e) {
-                // If parsing fails, add impossible condition
+                // If parsing fails, add impossible condition.
                 sql.append("AND 1=0 ");
             }
         }
 
-        // Origin
+        // Origin.
         if (origin != null && !origin.trim().isEmpty()) {
             sql.append("AND (o.iata_code = ? OR o.name LIKE ?) ");
             params.add(origin.trim().toUpperCase());
             params.add("%" + origin.trim() + "%");
         }
 
-        // Destination
+        // Destination.
         if (destination != null && !destination.trim().isEmpty()) {
             sql.append("AND (d.iata_code = ? OR d.name LIKE ?) ");
             params.add(destination.trim().toUpperCase());
             params.add("%" + destination.trim() + "%");
         }
 
-        // Date range
+        // Date range.
         if (startDate != null) {
             sql.append("AND f.date >= ? ");
             params.add(startDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
@@ -117,7 +117,7 @@ public class FlightDataService {
             params.add(endDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
         }
 
-        // Delay filters - only join if needed
+        // Delay filters - only join if needed.
         boolean hasDelayFilter = (minDelay != null || maxDelay != null ||
                 (delayReason != null && !delayReason.trim().isEmpty()));
 
@@ -142,18 +142,18 @@ public class FlightDataService {
             sql.append(") ");
         }
 
-        // Sort and limit results
+        // Sort and limit results.
         sql.append("ORDER BY f.date DESC, f.scheduled_departure LIMIT 1000");
 
-        // Debug info
+        // Debug info.
         System.out.println("Search SQL: " + sql);
 
-        // Run query
+        // Run query.
         List<Flight> results = new ArrayList<>();
         Map<Integer, Flight> flightMap = new HashMap<>();
 
         try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-            // Set parameters
+            // Set parameters.
             for (int i = 0; i < params.size(); i++) {
                 stmt.setObject(i + 1, params.get(i));
             }
@@ -186,7 +186,7 @@ public class FlightDataService {
 
         System.out.println("Found " + results.size() + " flights");
 
-        // Fetch delay reasons if we have results
+        // Fetch delay reasons if we have results.
         if (!results.isEmpty()) {
             fetchDelays(flightMap);
         }
@@ -194,11 +194,11 @@ public class FlightDataService {
         return results;
     }
 
-    // Get delay reasons for flights
+    // Get delay reasons for flights.
     private void fetchDelays(Map<Integer, Flight> flightMap) throws SQLException {
         if (flightMap.isEmpty()) return;
 
-        // Build list of IDs
+        // Build list of IDs.
         StringBuilder ids = new StringBuilder();
         for (Integer id : flightMap.keySet()) {
             if (ids.length() > 0) ids.append(",");
@@ -223,7 +223,7 @@ public class FlightDataService {
         }
     }
 
-    // Get all airlines for dropdown
+    // Get all airlines for dropdown.
     public List<String> getAirlines() throws SQLException {
         List<String> airlines = new ArrayList<>();
 
@@ -241,7 +241,7 @@ public class FlightDataService {
         return airlines;
     }
 
-    // Get all airports for dropdown
+    // Get all airports for dropdown.
     public List<String> getAirports() throws SQLException {
         List<String> airports = new ArrayList<>();
 
@@ -259,11 +259,11 @@ public class FlightDataService {
         return airports;
     }
 
-    // Get average delay by airline for a year
+    // Get average delay by airline for a year.
     public Map<String, Double> getAverageDelayByAirline(int year) throws SQLException {
         Map<String, Double> results = new HashMap<>();
 
-        // Try with delay_reason table first
+        // Try with delay_reason table first.
         String sql =
                 "SELECT a.name AS airline_name, " +
                         "AVG(dr.delay_length) AS avg_delay " +
@@ -285,7 +285,7 @@ public class FlightDataService {
             }
         }
 
-        // If empty, try fallback approach
+        // If empty, try fallback approach.
         if (results.isEmpty()) {
             sql = "SELECT a.name AS airline_name, " +
                     "AVG(CASE WHEN f.actual_arrival > f.scheduled_arrival " +
@@ -317,22 +317,22 @@ public class FlightDataService {
             }
         }
 
-        // Add mock data if still empty
-        if (results.isEmpty()) {
-            results.put("American Airlines", 15.0);
-            results.put("Delta Air Lines", 12.5);
-            results.put("United Airlines", 10.0);
-            results.put("Southwest Airlines", 8.5);
-        }
+//        Was looking into filling with mock dates, but decided against it.
+//        if (results.isEmpty()) {
+//            results.put("American Airlines", 15.0);
+//            results.put("Delta Air Lines", 12.5);
+//            results.put("United Airlines", 10.0);
+//            results.put("Southwest Airlines", 8.5);
+//        }
 
         return results;
     }
 
-    // Get average delay by airport for a year
+    // Get average delay by airport for a year.
     public Map<String, Double> getAverageDelayByAirport(int year) throws SQLException {
         Map<String, Double> results = new HashMap<>();
 
-        // Try delay_reason table first
+        // Try delay_reason table first.
         String sql =
                 "SELECT o.name AS airport_name, " +
                         "AVG(dr.delay_length) AS avg_delay " +
@@ -388,23 +388,22 @@ public class FlightDataService {
             }
         }
 
-        // Mock data if needed
-        if (results.isEmpty()) {
-            results.put("Atlanta, GA", 20.0);
-            results.put("Chicago, IL", 18.5);
-            results.put("Los Angeles, CA", 15.0);
-            results.put("New York, NY", 22.5);
-            results.put("Dallas/Fort Worth, TX", 12.0);
-        }
+//        if (results.isEmpty()) {
+//            results.put("Atlanta, GA", 20.0);
+//            results.put("Chicago, IL", 18.5);
+//            results.put("Los Angeles, CA", 15.0);
+//            results.put("New York, NY", 22.5);
+//            results.put("Dallas/Fort Worth, TX", 12.0);
+//        }
 
         return results;
     }
 
-    // Get monthly delays for an airport over a date range
+    // Get monthly delays for an airport over a date range.
     public Map<String, Double> getDelaysByMonth(String airportCode, int startYear, int endYear) throws SQLException {
         Map<String, Double> results = new HashMap<>();
 
-        // Try delay_reason table first
+        // Try delay_reason table first.
         String sql =
                 "SELECT substr(f.date, 3, 2) || '/' || substr(f.date, 5, 4) AS month_year, " +
                         "AVG(dr.delay_length) AS avg_delay " +
@@ -428,28 +427,27 @@ public class FlightDataService {
         }
 
         // If empty, try fallback approach
-        if (results.isEmpty()) {
-            // Generate mock data with seasonal pattern
-            for (int year = startYear; year <= endYear; year++) {
-                for (int month = 1; month <= 12; month++) {
-                    String monthStr = (month < 10) ? "0" + month : String.valueOf(month);
-                    String monthYear = monthStr + "/" + year;
-
-                    // Summer and winter have more delays
-                    double mockDelay = 10.0;
-                    if (month <= 2 || month == 12) { // Winter
-                        mockDelay += 8.0 + (Math.random() * 5.0);
-                    } else if (month >= 6 && month <= 8) { // Summer
-                        mockDelay += 7.0 + (Math.random() * 4.0);
-                    } else { // Spring/Fall
-                        mockDelay += 3.0 + (Math.random() * 3.0);
-                    }
-
-                    results.put(monthYear, mockDelay);
-                }
-            }
-        }
-
+//        if (results.isEmpty()) {
+//            for (int year = startYear; year <= endYear; year++) {
+//                for (int month = 1; month <= 12; month++) {
+//                    String monthStr = (month < 10) ? "0" + month : String.valueOf(month);
+//                    String monthYear = monthStr + "/" + year;
+//
+//                    // Summer and winter have more delays
+//                    double mockDelay = 10.0;
+//                    if (month <= 2 || month == 12) { // Winter
+//                        mockDelay += 8.0 + (Math.random() * 5.0);
+//                    } else if (month >= 6 && month <= 8) { // Summer
+//                        mockDelay += 7.0 + (Math.random() * 4.0);
+//                    } else { // Spring/Fall
+//                        mockDelay += 3.0 + (Math.random() * 3.0);
+//                    }
+//
+//                    results.put(monthYear, mockDelay);
+//                }
+//            }
+//        }
+//
         return results;
     }
 }

@@ -1,7 +1,9 @@
-package ui;
-
 import flightModel.Flight;
 import service.FlightDataService;
+import ui.AnalysisPanel;
+import ui.FlightDetailPanel;
+import ui.FlightTableModel;
+import ui.SearchPanel;
 
 import javax.swing.*;
 import javax.swing.border.Border;
