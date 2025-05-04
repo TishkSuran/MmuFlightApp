@@ -106,15 +106,36 @@ public class FlightDataService {
             params.add("%" + destination.trim() + "%");
         }
 
-        // Date range.
-        if (startDate != null) {
-            sql.append("AND f.date >= ? ");
-            params.add(startDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
-        }
+        // Date range - using a better approach for DDMMYYYY format
+        if (startDate != null || endDate != null) {
+            // Add a computation to extract year, month, day as integers for comparison
+            sql.append("AND CAST(substr(f.date, 5, 4) AS INTEGER) * 10000 + " +
+                    "CAST(substr(f.date, 3, 2) AS INTEGER) * 100 + " +
+                    "CAST(substr(f.date, 1, 2) AS INTEGER) ");
 
-        if (endDate != null) {
-            sql.append("AND f.date <= ? ");
-            params.add(endDate.format(DateTimeFormatter.ofPattern("ddMMyyyy")));
+            if (startDate != null) {
+                sql.append(">= ? ");
+                // Calculate the integer value: YYYYMMDD
+                int dateValue = startDate.getYear() * 10000 +
+                        startDate.getMonthValue() * 100 +
+                        startDate.getDayOfMonth();
+                params.add(dateValue);
+            }
+
+            if (startDate != null && endDate != null) {
+                sql.append("AND CAST(substr(f.date, 5, 4) AS INTEGER) * 10000 + " +
+                        "CAST(substr(f.date, 3, 2) AS INTEGER) * 100 + " +
+                        "CAST(substr(f.date, 1, 2) AS INTEGER) ");
+            }
+
+            if (endDate != null) {
+                sql.append("<= ? ");
+                // Calculate the integer value: YYYYMMDD
+                int dateValue = endDate.getYear() * 10000 +
+                        endDate.getMonthValue() * 100 +
+                        endDate.getDayOfMonth();
+                params.add(dateValue);
+            }
         }
 
         // Delay filters - only join if needed.
@@ -142,8 +163,6 @@ public class FlightDataService {
             sql.append(") ");
         }
 
-        // Sort and limit results.
-        sql.append("ORDER BY f.date DESC, f.scheduled_departure LIMIT 1000");
 
         // Debug info.
         System.out.println("Search SQL: " + sql);
@@ -193,7 +212,6 @@ public class FlightDataService {
 
         return results;
     }
-
     // Get delay reasons for flights.
     private void fetchDelays(Map<Integer, Flight> flightMap) throws SQLException {
         if (flightMap.isEmpty()) return;
@@ -343,7 +361,7 @@ public class FlightDataService {
                         "GROUP BY o.name " +
                         "HAVING COUNT(*) > 1 " +
                         "ORDER BY avg_delay DESC " +
-                        "LIMIT 20";
+                        "LIMIT 2000000";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, String.valueOf(year));
@@ -367,7 +385,7 @@ public class FlightDataService {
                     "GROUP BY o.name " +
                     "HAVING COUNT(*) > 1 " +
                     "ORDER BY avg_delay DESC " +
-                    "LIMIT 20";
+                    "LIMIT 2000000";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, String.valueOf(year));
