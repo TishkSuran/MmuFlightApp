@@ -8,10 +8,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Panel that displays detailed information about a selected flight.
- * Shows flight details, timing information, and delay data.
- */
 public class FlightDetailPanel extends JPanel {
 
     // UI colors and fonts.
@@ -257,9 +253,6 @@ public class FlightDetailPanel extends JPanel {
         );
     }
 
-    /**
-     * Updates the panel with details from the given flight.
-     */
     public void setFlight(Flight flight) {
         if (flight == null) {
             clearDetails();
@@ -423,9 +416,6 @@ public class FlightDetailPanel extends JPanel {
         }
     }
 
-    /**
-     * Clears all flight details.
-     */
     public void clearDetails() {
         // Reset status
         statusLabel.setText("No Flight Selected");

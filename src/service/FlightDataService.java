@@ -335,14 +335,6 @@ public class FlightDataService {
             }
         }
 
-//        Was looking into filling with mock dates, but decided against it.
-//        if (results.isEmpty()) {
-//            results.put("American Airlines", 15.0);
-//            results.put("Delta Air Lines", 12.5);
-//            results.put("United Airlines", 10.0);
-//            results.put("Southwest Airlines", 8.5);
-//        }
-
         return results;
     }
 
@@ -408,10 +400,6 @@ public class FlightDataService {
 
 //        if (results.isEmpty()) {
 //            results.put("Atlanta, GA", 20.0);
-//            results.put("Chicago, IL", 18.5);
-//            results.put("Los Angeles, CA", 15.0);
-//            results.put("New York, NY", 22.5);
-//            results.put("Dallas/Fort Worth, TX", 12.0);
 //        }
 
         return results;
@@ -444,28 +432,6 @@ public class FlightDataService {
             }
         }
 
-        // If empty, try fallback approach
-//        if (results.isEmpty()) {
-//            for (int year = startYear; year <= endYear; year++) {
-//                for (int month = 1; month <= 12; month++) {
-//                    String monthStr = (month < 10) ? "0" + month : String.valueOf(month);
-//                    String monthYear = monthStr + "/" + year;
-//
-//                    // Summer and winter have more delays
-//                    double mockDelay = 10.0;
-//                    if (month <= 2 || month == 12) { // Winter
-//                        mockDelay += 8.0 + (Math.random() * 5.0);
-//                    } else if (month >= 6 && month <= 8) { // Summer
-//                        mockDelay += 7.0 + (Math.random() * 4.0);
-//                    } else { // Spring/Fall
-//                        mockDelay += 3.0 + (Math.random() * 3.0);
-//                    }
-//
-//                    results.put(monthYear, mockDelay);
-//                }
-//            }
-//        }
-//
         return results;
     }
 }

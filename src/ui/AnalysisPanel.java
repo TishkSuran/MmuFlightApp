@@ -27,10 +27,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * Panel for displaying flight analysis charts.
- * Uses UK-specific date formatting.
- */
+
 public class AnalysisPanel extends JPanel {
 
     // Colours.
@@ -50,9 +47,6 @@ public class AnalysisPanel extends JPanel {
     private final JTextArea summaryTextArea;
     private String currentChart = "none";
 
-    /**
-     * Creates a new analysis panel.
-     */
     public AnalysisPanel() {
         setLayout(new BorderLayout(10, 10));
         setBackground(bgColour);
@@ -100,9 +94,6 @@ public class AnalysisPanel extends JPanel {
         add(splitPane, BorderLayout.CENTER);
     }
 
-    /**
-     * Creates a titled border with standard style.
-     */
     private javax.swing.border.Border createBorder(String title) {
         return new CompoundBorder(
                 BorderFactory.createTitledBorder(
@@ -117,9 +108,6 @@ public class AnalysisPanel extends JPanel {
         );
     }
 
-    /**
-     * Shows the initial welcome screen.
-     */
     private void showWelcomeScreen() {
         chartPanel.removeAll();
         chartTitleLabel.setText("Flight Analysis");
@@ -164,9 +152,6 @@ public class AnalysisPanel extends JPanel {
         repaint();
     }
 
-    /**
-     * Shows airline delay comparison chart.
-     */
     public void showAirlineDelayChart(Map<String, Double> data, int year) {
         currentChart = "airline";
 
@@ -266,9 +251,7 @@ public class AnalysisPanel extends JPanel {
         repaint();
     }
 
-    /**
-     * Shows airport delay comparison chart.
-     */
+
     public void showAirportDelayChart(Map<String, Double> data, int year) {
         currentChart = "airport";
 
@@ -372,9 +355,7 @@ public class AnalysisPanel extends JPanel {
         repaint();
     }
 
-    /**
-     * Shows time series chart for an airport.
-     */
+
     public void showTimeSeriesChart(Map<String, Double> data, String airportName) {
         currentChart = "timeseries";
 

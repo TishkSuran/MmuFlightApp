@@ -10,9 +10,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-/**
- * Search panel for querying flight data with UK date formatting.
- */
 public class SearchPanel extends JPanel {
 
     // UI appearance.
@@ -282,9 +279,6 @@ public class SearchPanel extends JPanel {
         field.setText(LocalDate.now().format(ukDateFormat));
     }
 
-    /**
-     * Resets all search fields to their default values.
-     */
     public void clearFields() {
         // Reset dropdowns and text.
         airlineComboBox.setSelectedIndex(0);
@@ -306,9 +300,6 @@ public class SearchPanel extends JPanel {
         includeDivertedCheckbox.setSelected(true);
     }
 
-    /**
-     * Gets the selected airline or null if none selected.
-     */
     public String getAirline() {
         String airline = (String) airlineComboBox.getSelectedItem();
         if (airline == null || airline.isEmpty()) {
@@ -323,17 +314,11 @@ public class SearchPanel extends JPanel {
         return airline;
     }
 
-    /**
-     * Gets the entered flight number or null if empty.
-     */
     public String getFlightNumber() {
         String flightNumber = flightNumberField.getText().trim();
         return flightNumber.isEmpty() ? null : flightNumber;
     }
 
-    /**
-     * Gets the selected origin airport or null if none.
-     */
     public String getOrigin() {
         String origin = (String) originComboBox.getSelectedItem();
         if (origin == null || origin.isEmpty()) {
@@ -348,9 +333,6 @@ public class SearchPanel extends JPanel {
         return origin;
     }
 
-    /**
-     * Gets the selected destination airport or null if none.
-     */
     public String getDestination() {
         String destination = (String) destinationComboBox.getSelectedItem();
         if (destination == null || destination.isEmpty()) {
@@ -365,10 +347,6 @@ public class SearchPanel extends JPanel {
         return destination;
     }
 
-    /**
-     * Gets the selected start date in UK format.
-     * Returns null if the date is invalid.
-     */
     public LocalDate getStartDate() {
         try {
             String dateText = startDateField.getText().trim();
@@ -379,10 +357,6 @@ public class SearchPanel extends JPanel {
         }
     }
 
-    /**
-     * Gets the selected end date in UK format.
-     * Returns null if the date is invalid.
-     */
     public LocalDate getEndDate() {
         try {
             String dateText = endDateField.getText().trim();
@@ -393,25 +367,16 @@ public class SearchPanel extends JPanel {
         }
     }
 
-    /**
-     * Gets the minimum delay or null if zero.
-     */
     public Integer getMinDelay() {
         int minDelay = (Integer) minDelaySpinner.getValue();
         return minDelay > 0 ? minDelay : null;
     }
 
-    /**
-     * Gets the maximum delay or null if zero.
-     */
     public Integer getMaxDelay() {
         int maxDelay = (Integer) maxDelaySpinner.getValue();
         return maxDelay > 0 ? maxDelay : null;
     }
 
-    /**
-     * Gets the selected delay reason code.
-     */
     public String getDelayReason() {
         int index = delayReasonComboBox.getSelectedIndex();
         if (index <= 0) return null;
@@ -427,16 +392,10 @@ public class SearchPanel extends JPanel {
         }
     }
 
-    /**
-     * Checks if cancelled flights should be included.
-     */
     public boolean includeCancelled() {
         return includeCancelledCheckbox.isSelected();
     }
 
-    /**
-     * Checks if diverted flights should be included.
-     */
     public boolean includeDiverted() {
         return includeDivertedCheckbox.isSelected();
     }

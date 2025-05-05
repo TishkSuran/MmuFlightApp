@@ -81,6 +81,17 @@ public class DatabaseManager {
                             ")"
             );
 
+
+            stmt.executeUpdate("CREATE INDEX idx_flight_date ON Flight(date)");
+            stmt.executeUpdate("CREATE INDEX idx_flight_airline ON Flight(airline_code)");
+            stmt.executeUpdate("CREATE INDEX idx_flight_origin_dest ON Flight(flight_origin, flight_destination)");
+            stmt.executeUpdate("CREATE INDEX idx_flight_cancelled ON Flight(cancelled)");
+            stmt.executeUpdate("CREATE INDEX idx_flight_diverted ON Flight(diverted)");
+            stmt.executeUpdate("CREATE INDEX idx_delay_flight_id ON Delay_Reason(flight_id)");
+            stmt.executeUpdate("CREATE INDEX idx_delay_reason ON Delay_Reason(reason)");
+            stmt.executeUpdate("CREATE INDEX idx_delay_length ON Delay_Reason(delay_length)");
+
+
             connection.commit();
             System.out.println("Database schema created with support for cancelled and diverted flights.");
         }
