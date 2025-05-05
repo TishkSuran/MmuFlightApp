@@ -7,9 +7,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/**
- * Service for flight data queries.
- */
+
 public class FlightDataService {
 
     private static final String DB_URL = "jdbc:sqlite:flights.db";
@@ -28,9 +26,7 @@ public class FlightDataService {
         }
     }
 
-    /**
-     * Search flights by criteria.
-     */
+
     public List<Flight> searchFlights(String airline, String flightNumber,
                                       String origin, String destination,
                                       LocalDate startDate, LocalDate endDate,
@@ -106,7 +102,6 @@ public class FlightDataService {
             params.add("%" + destination.trim() + "%");
         }
 
-        // Date range - using a better approach for DDMMYYYY format
         if (startDate != null || endDate != null) {
             // Add a computation to extract year, month, day as integers for comparison
             sql.append("AND CAST(substr(f.date, 5, 4) AS INTEGER) * 10000 + " +
@@ -115,7 +110,6 @@ public class FlightDataService {
 
             if (startDate != null) {
                 sql.append(">= ? ");
-                // Calculate the integer value: YYYYMMDD
                 int dateValue = startDate.getYear() * 10000 +
                         startDate.getMonthValue() * 100 +
                         startDate.getDayOfMonth();
@@ -130,7 +124,6 @@ public class FlightDataService {
 
             if (endDate != null) {
                 sql.append("<= ? ");
-                // Calculate the integer value: YYYYMMDD
                 int dateValue = endDate.getYear() * 10000 +
                         endDate.getMonthValue() * 100 +
                         endDate.getDayOfMonth();

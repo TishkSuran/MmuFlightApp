@@ -128,8 +128,7 @@ public class AnalysisPanel extends JPanel {
                 "Use the Analysis menu or toolbar buttons to generate reports:\n\n" +
                         "• Airline Delays by Year - Compare which airlines have the most delays\n" +
                         "• Airport Delays by Year - See which airports experience the most delays\n" +
-                        "• Airport Delays Over Time - Track how delays change throughout the year\n\n" +
-                        "All date information is displayed in UK format (DD/MM/YYYY)."
+                        "• Airport Delays Over Time - Track how delays change throughout the year\n\n"
         );
         instructionText.setEditable(false);
         instructionText.setLineWrap(true);

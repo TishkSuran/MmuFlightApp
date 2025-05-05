@@ -19,9 +19,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Flight Punctuality App - shows delay stats for airports.
- */
 public class FlightApp extends JFrame {
 
     // Services & models/
@@ -42,9 +39,7 @@ public class FlightApp extends JFrame {
     // Quick access to shared borders
     private Border standardBorder;
 
-    /**
-     * Creates the main app frame
-     */
+
     public FlightApp() throws SQLException {
         super("Flight Punctuality Tracker");
 
