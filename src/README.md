@@ -56,17 +56,10 @@ To run the application:
 
 ## Known Issues & Limitations
 
+- This is not a bug, but a limitation of SQLite, if queries are too large, above 1 mb, the search will fail.
 - The application sometimes runs a bit slow when doing complex queries across the whole dataset. I tried to optimise this with indices but there might be room for improvement.
 - The time series chart can look a bit crowded when showing many months of data.
 - There's a weird bug where occasionally the date selector doesn't register the first click - you have to click twice.
 
-## Database Design Decisions
-
-For performance reasons, I created the following indices:
-- Flight.airline_code
-- Flight.flight_origin, Flight.flight_destination
-- Flight.date
-- Delay_Reason.flight_id
-- Delay_Reason.reason
 
 Thank you for your time reviewing this assignment. I'm happy to answer any questions or explain any part of the implementation.
