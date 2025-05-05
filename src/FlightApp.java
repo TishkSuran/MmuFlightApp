@@ -118,9 +118,6 @@ public class FlightApp extends JFrame {
         return table;
     }
 
-    /**
-     * Builds the UI layout
-     */
     private void buildUI() {
         // Hook up flight selection -> detail panel.
         flightTable.getSelectionModel().addListSelectionListener(e -> {
@@ -196,9 +193,6 @@ public class FlightApp extends JFrame {
         setJMenuBar(makeMenuBar());
     }
 
-    /**
-     * Creates toolbar with quick buttons
-     */
     private JToolBar makeToolBar() {
         JToolBar bar = new JToolBar();
         bar.setFloatable(false);
@@ -243,13 +237,10 @@ public class FlightApp extends JFrame {
         return bar;
     }
 
-    /**
-     * Creates app menu
-     */
     private JMenuBar makeMenuBar() {
         JMenuBar menuBar = new JMenuBar();
 
-        // File menu
+        // File menu.
         JMenu fileMenu = new JMenu("File");
         fileMenu.add(new JMenuItem("Export Results")).addActionListener(this::handleExport);
         fileMenu.add(new JMenuItem("Print")).addActionListener(e ->
@@ -258,7 +249,7 @@ public class FlightApp extends JFrame {
         fileMenu.addSeparator();
         fileMenu.add(new JMenuItem("Exit")).addActionListener(e -> System.exit(0));
 
-        // Analysis menu
+        // Analysis menu.
         JMenu analysisMenu = new JMenu("Analysis");
         analysisMenu.add(new JMenuItem("Airline Delays by Year"))
                 .addActionListener(this::handleAirlineAnalysis);
@@ -267,7 +258,7 @@ public class FlightApp extends JFrame {
         analysisMenu.add(new JMenuItem("Airport Delays Over Time"))
                 .addActionListener(this::handleTimeSeriesAnalysis);
 
-        // Help menu
+        // Help menu.
         JMenu helpMenu = new JMenu("Help");
         helpMenu.add(new JMenuItem("User Guide")).addActionListener(e -> showHelp());
         helpMenu.add(new JMenuItem("About")).addActionListener(e -> showAbout());
@@ -279,9 +270,6 @@ public class FlightApp extends JFrame {
         return menuBar;
     }
 
-    /**
-     * Makes a titled border with our standard style
-     */
     private Border makeTitledBorder(String title) {
         TitledBorder titledBorder = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
@@ -296,15 +284,13 @@ public class FlightApp extends JFrame {
         );
     }
 
-    /**
-     * Handles search actions
-     */
+
     private void handleSearch(ActionEvent e) {
         try {
             statusLabel.setText("Searching...");
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-            // Grab search params
+            // Grab search params.
             String airline = searchPanel.getAirline();
             String flightNum = searchPanel.getFlightNumber();
             String origin = searchPanel.getOrigin();
@@ -315,7 +301,7 @@ public class FlightApp extends JFrame {
             Integer maxDelay = searchPanel.getMaxDelay();
             String delayReason = searchPanel.getDelayReason();
 
-            // Show what we're searching for
+            // Show what we're searching for.
             StringBuilder searchDesc = new StringBuilder("Searching for flights");
             if (airline != null && !airline.isEmpty())
                 searchDesc.append(" with ").append(airline);
@@ -326,17 +312,17 @@ public class FlightApp extends JFrame {
 
             statusLabel.setText(searchDesc.toString());
 
-            // Run the search
+            // Run the search.
             List<Flight> results = dataService.searchFlights(
                     airline, flightNum, origin, dest,
                     startDate, endDate, minDelay, maxDelay, delayReason
             );
 
-            // Update UI
+            // Update UI.
             tableModel.setFlights(results);
             flightTable.clearSelection();
 
-            // Show result stats
+            // Show result stats.
             int delayed = countDelays(results);
             int cancelled = countCancellations(results);
 
@@ -356,9 +342,6 @@ public class FlightApp extends JFrame {
         }
     }
 
-    /**
-     * Count delayed flights
-     */
     private int countDelays(List<Flight> flights) {
         int count = 0;
         for (Flight f : flights) {
@@ -369,9 +352,6 @@ public class FlightApp extends JFrame {
         return count;
     }
 
-    /**
-     * Count cancellations
-     */
     private int countCancellations(List<Flight> flights) {
         int count = 0;
         for (Flight f : flights) {
@@ -382,9 +362,7 @@ public class FlightApp extends JFrame {
         return count;
     }
 
-    /**
-     * Clear search form and results
-     */
+
     private void handleClear(ActionEvent e) {
         searchPanel.clearFields();
         tableModel.setFlights(new java.util.ArrayList<>());
@@ -392,9 +370,6 @@ public class FlightApp extends JFrame {
         statusLabel.setText("Search cleared");
     }
 
-    /**
-     * Show airline delay chart
-     */
     private void handleAirlineAnalysis(ActionEvent e) {
         // Years we have data for
         Object[] years = {"2019", "2020", "2021", "2022", "2023"};
@@ -416,13 +391,13 @@ public class FlightApp extends JFrame {
                 statusLabel.setText("Getting airline delays for " + year + "...");
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-                // Get data
+                // Get data.
                 Map<String, Double> data = dataService.getAverageDelayByAirline(year);
 
-                // Show chart
+                // Show chart.
                 analysisPanel.showAirlineDelayChart(data, year);
 
-                // Switch to chart tab
+                // Switch to chart tab.
                 ((JTabbedPane)analysisPanel.getParent()).setSelectedComponent(analysisPanel);
 
                 statusLabel.setText("Airline analysis done for " + year);
@@ -441,9 +416,6 @@ public class FlightApp extends JFrame {
         }
     }
 
-    /**
-     * Show airport delay chart
-     */
     private void handleAirportAnalysis(ActionEvent e) {
         Object[] years = {"2019", "2020", "2021", "2022", "2023"};
 
@@ -464,7 +436,6 @@ public class FlightApp extends JFrame {
                 statusLabel.setText("Getting airport delays for " + year + "...");
                 setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-                // Get data and show chart
                 Map<String, Double> data = dataService.getAverageDelayByAirport(year);
                 analysisPanel.showAirportDelayChart(data, year);
 
@@ -487,9 +458,7 @@ public class FlightApp extends JFrame {
         }
     }
 
-    /**
-     * Show time series chart for a specific airport
-     */
+
     private void handleTimeSeriesAnalysis(ActionEvent e) {
         try {
             List<String> airports = dataService.getAirports();
@@ -505,7 +474,6 @@ public class FlightApp extends JFrame {
                     airportOptions[0]);
 
             if (selectedAirport != null && !selectedAirport.trim().isEmpty()) {
-                // Parse code from "LHR - London Heathrow" format
                 String airportCode = selectedAirport.substring(0, selectedAirport.indexOf(" - "));
                 String airportName = selectedAirport.substring(selectedAirport.indexOf(" - ") + 3);
 
@@ -551,29 +519,24 @@ public class FlightApp extends JFrame {
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            // This would actually save in a real implementation
+            // This would actually save in a real implementation.
             JOptionPane.showMessageDialog(this,
-                    "Data would be saved to: " + fc.getSelectedFile().getPath(),
+                    "Data would have been saved to: " + fc.getSelectedFile().getPath() + " but I was too lazy to implement this feature.",
                     "Export", JOptionPane.INFORMATION_MESSAGE);
 
             statusLabel.setText("Exported to " + fc.getSelectedFile().getName());
         }
     }
 
-    /**
-     * Show help popup
-     */
     private void showHelp() {
         JOptionPane.showMessageDialog(this,
                 "Flight Punctuality Tracker Help\n\n" +
+                        "Common Issue: Please ensure you have updated the dates correctly if you are not receiving any values.\n" +
                         "Search: Enter airline, flight#, origin or destination\n" +
                         "Analysis: Check delay stats via Analysis menu",
                 "Help", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /**
-     * Show about popup
-     */
     private void showAbout() {
         JOptionPane.showMessageDialog(this,
                 "Flight Punctuality Tracker\n" +
@@ -598,18 +561,15 @@ public class FlightApp extends JFrame {
         }
     }
 
-    /**
-     * Main app entry point
-     */
+
     public static void main(String[] args) {
         try {
-            // Try system look and feel
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             System.err.println("Look and feel error: " + e.getMessage());
         }
 
-        // Launch app
+        // Launch app.
         SwingUtilities.invokeLater(() -> {
             try {
                 new FlightApp().setVisible(true);
